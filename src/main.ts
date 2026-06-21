@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { AuthService } from './auth/auth.service';
 import { BannersService } from './banners/banners.service';
 import { CategoriesService } from './categories/categories.service';
+import { ProductsService } from './products/products.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,6 +34,9 @@ async function bootstrap() {
 
   const categoriesService = app.get(CategoriesService);
   await categoriesService.seedDefaults();
+
+  const productsService = app.get(ProductsService);
+  await productsService.seedDefaults();
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);

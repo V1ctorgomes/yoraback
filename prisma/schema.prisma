@@ -34,15 +34,37 @@ model Banner {
 }
 
 model Category {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String
-  slug         String   @unique
+  slug         String    @unique
   description  String?
-  imageUrl     String?  @map("image_url")
-  isActive     Boolean  @default(true) @map("is_active")
-  displayOrder Int      @default(0) @map("display_order")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  imageUrl     String?   @map("image_url")
+  isActive     Boolean   @default(true) @map("is_active")
+  displayOrder Int       @default(0) @map("display_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  products     Product[]
 
   @@map("categories")
+}
+
+model Product {
+  id               String   @id @default(uuid())
+  name             String
+  slug             String   @unique
+  shortDescription String   @map("short_description")
+  description      String
+  categoryId       String   @map("category_id")
+  category         Category @relation(fields: [categoryId], references: [id])
+  basePrice        Decimal  @map("base_price") @db.Decimal(10, 2)
+  coverImage       String   @map("cover_image")
+  isFeatured       Boolean  @default(false) @map("is_featured")
+  isNew            Boolean  @default(false) @map("is_new")
+  isActive         Boolean  @default(true) @map("is_active")
+  seoTitle         String?  @map("seo_title")
+  seoDescription   String?  @map("seo_description")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("products")
 }

@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { BannersModule } from './banners/banners.module';
 import { CategoriesModule } from './categories/categories.module';
 import { HealthModule } from './health/health.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     BannersModule,
     CategoriesModule,
+    ProductsModule,
     HealthModule,
   ],
 })
