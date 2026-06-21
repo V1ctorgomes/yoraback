@@ -49,22 +49,53 @@ model Category {
 }
 
 model Product {
-  id               String   @id @default(uuid())
+  id               String           @id @default(uuid())
   name             String
-  slug             String   @unique
-  shortDescription String   @map("short_description")
+  slug             String           @unique
+  shortDescription String           @map("short_description")
   description      String
-  categoryId       String   @map("category_id")
-  category         Category @relation(fields: [categoryId], references: [id])
-  basePrice        Decimal  @map("base_price") @db.Decimal(10, 2)
-  coverImage       String   @map("cover_image")
-  isFeatured       Boolean  @default(false) @map("is_featured")
-  isNew            Boolean  @default(false) @map("is_new")
-  isActive         Boolean  @default(true) @map("is_active")
-  seoTitle         String?  @map("seo_title")
-  seoDescription   String?  @map("seo_description")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  categoryId       String           @map("category_id")
+  category         Category         @relation(fields: [categoryId], references: [id])
+  basePrice        Decimal          @map("base_price") @db.Decimal(10, 2)
+  coverImage       String           @map("cover_image")
+  isFeatured       Boolean          @default(false) @map("is_featured")
+  isNew            Boolean          @default(false) @map("is_new")
+  isActive         Boolean          @default(true) @map("is_active")
+  seoTitle         String?          @map("seo_title")
+  seoDescription   String?          @map("seo_description")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  variants         ProductVariant[]
+  images           ProductImage[]
 
   @@map("products")
+}
+
+model ProductVariant {
+  id            String   @id @default(uuid())
+  productId     String   @map("product_id")
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku           String   @unique
+  color         String
+  size          String
+  priceOverride Decimal? @map("price_override") @db.Decimal(10, 2)
+  stock         Int      @default(0)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([productId, color, size])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id           String   @id @default(uuid())
+  productId    String   @map("product_id")
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  imageUrl     String   @map("image_url")
+  altText      String?  @map("alt_text")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("product_images")
 }

@@ -33,6 +33,15 @@ const publicDetailSelect = {
   description: true,
   seoTitle: true,
   seoDescription: true,
+  images: {
+    orderBy: { displayOrder: 'asc' as const },
+    select: {
+      id: true,
+      imageUrl: true,
+      altText: true,
+      displayOrder: true,
+    },
+  },
 } as const;
 
 type ProductRecord = {
