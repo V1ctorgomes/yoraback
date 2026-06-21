@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AuthService } from './auth/auth.service';
 import { BannersService } from './banners/banners.service';
+import { CategoriesService } from './categories/categories.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -29,6 +30,9 @@ async function bootstrap() {
 
   const bannersService = app.get(BannersService);
   await bannersService.seedDefaults();
+
+  const categoriesService = app.get(CategoriesService);
+  await categoriesService.seedDefaults();
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
