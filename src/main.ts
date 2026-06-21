@@ -19,6 +19,7 @@ async function bootstrap() {
       'http://localhost:3000',
     ],
     credentials: true,
+    exposedHeaders: ['X-Cart-Token'],
   });
 
   app.useGlobalPipes(
