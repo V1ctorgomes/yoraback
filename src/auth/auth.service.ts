@@ -40,19 +40,19 @@ export class AuthService {
   }
 
   async seedAdmin() {
-    const email = this.config.get('ADMIN_EMAIL', 'admin@yora.com.br');
-    const existing = await this.prisma.admin.findUnique({ where: { email } });
+    const email = this.config
+      .get<string>('ADMIN_EMAIL', 'admin@yora.com.br')
+      .toLowerCase()
+      .trim();
+    const password = this.config.get<string>('ADMIN_PASSWORD', 'Admin@123');
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    if (existing) {
-      return;
-    }
-
-    const password = this.config.get('ADMIN_PASSWORD', 'Admin@123');
-    await this.prisma.admin.create({
-      data: {
-        email,
-        passwordHash: await bcrypt.hash(password, 10),
-      },
+    await this.prisma.admin.upsert({
+      where: { email },
+      update: { passwordHash },
+      create: { email, passwordHash },
     });
+
+    console.log(`[yoraback] Admin sincronizado: ${email}`);
   }
 }
