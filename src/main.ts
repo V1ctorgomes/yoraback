@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { AuthService } from './auth/auth.service';
 import { BannersService } from './banners/banners.service';
 import { CategoriesService } from './categories/categories.service';
+import { CollectionsService } from './collections/collections.service';
 import { ProductsService } from './products/products.service';
 import { ProductVariantsService } from './products/product-variants.service';
 import { ProductImagesService } from './products/product-images.service';
@@ -45,6 +46,9 @@ async function bootstrap() {
 
   const productImagesService = app.get(ProductImagesService);
   await productImagesService.seedDefaults();
+
+  const collectionsService = app.get(CollectionsService);
+  await collectionsService.seedDefaults();
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);

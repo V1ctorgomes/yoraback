@@ -56,6 +56,8 @@ model Product {
   description      String
   categoryId       String           @map("category_id")
   category         Category         @relation(fields: [categoryId], references: [id])
+  collectionId     String?          @map("collection_id")
+  collection       Collection?      @relation(fields: [collectionId], references: [id], onDelete: SetNull)
   basePrice        Decimal          @map("base_price") @db.Decimal(10, 2)
   coverImage       String           @map("cover_image")
   isFeatured       Boolean          @default(false) @map("is_featured")
@@ -69,6 +71,24 @@ model Product {
   images           ProductImage[]
 
   @@map("products")
+}
+
+model Collection {
+  id                String    @id @default(uuid())
+  name              String
+  slug              String    @unique
+  description       String?
+  bannerImageUrl    String    @map("banner_image_url")
+  thumbnailImageUrl String    @map("thumbnail_image_url")
+  launchDate        DateTime  @map("launch_date")
+  endDate           DateTime? @map("end_date")
+  isActive          Boolean   @default(true) @map("is_active")
+  isFeatured        Boolean   @default(false) @map("is_featured")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  products          Product[]
+
+  @@map("collections")
 }
 
 model ProductVariant {

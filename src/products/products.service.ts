@@ -16,6 +16,12 @@ const categorySelect = {
   slug: true,
 } as const;
 
+const collectionSelect = {
+  id: true,
+  name: true,
+  slug: true,
+} as const;
+
 const publicListSelect = {
   id: true,
   name: true,
@@ -91,6 +97,7 @@ export class ProductsService {
         orderBy: { createdAt: 'desc' },
         include: {
           category: { select: categorySelect },
+          collection: { select: collectionSelect },
         },
       })
       .then((products) => products.map((product) => this.serializeProduct(product)));
@@ -101,6 +108,7 @@ export class ProductsService {
       where: { id },
       include: {
         category: { select: categorySelect },
+        collection: { select: collectionSelect },
       },
     });
 
@@ -113,6 +121,9 @@ export class ProductsService {
 
   async create(dto: CreateProductDto) {
     await this.ensureCategoryExists(dto.categoryId);
+    if (dto.collectionId) {
+      await this.ensureCollectionExists(dto.collectionId);
+    }
 
     const slug = await this.resolveSlug(dto.slug ?? slugify(dto.name), dto.name);
 
@@ -123,6 +134,7 @@ export class ProductsService {
         shortDescription: dto.shortDescription.trim(),
         description: dto.description.trim(),
         categoryId: dto.categoryId,
+        collectionId: dto.collectionId ?? null,
         basePrice: dto.basePrice,
         coverImage: dto.coverImage.trim(),
         isFeatured: dto.isFeatured ?? false,
@@ -133,6 +145,7 @@ export class ProductsService {
       },
       include: {
         category: { select: categorySelect },
+        collection: { select: collectionSelect },
       },
     });
 
@@ -144,6 +157,10 @@ export class ProductsService {
 
     if (dto.categoryId !== undefined) {
       await this.ensureCategoryExists(dto.categoryId);
+    }
+
+    if (dto.collectionId) {
+      await this.ensureCollectionExists(dto.collectionId);
     }
 
     let slug = current.slug as string;
@@ -167,6 +184,9 @@ export class ProductsService {
           description: dto.description.trim(),
         }),
         ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
+        ...(dto.collectionId !== undefined && {
+          collectionId: dto.collectionId,
+        }),
         ...(dto.basePrice !== undefined && { basePrice: dto.basePrice }),
         ...(dto.coverImage !== undefined && {
           coverImage: dto.coverImage.trim(),
@@ -183,6 +203,7 @@ export class ProductsService {
       },
       include: {
         category: { select: categorySelect },
+        collection: { select: collectionSelect },
       },
     });
 
@@ -333,6 +354,16 @@ export class ProductsService {
 
     if (!category) {
       throw new NotFoundException('Categoria não encontrada');
+    }
+  }
+
+  private async ensureCollectionExists(collectionId: string) {
+    const collection = await this.prisma.collection.findUnique({
+      where: { id: collectionId },
+    });
+
+    if (!collection) {
+      throw new NotFoundException('Coleção não encontrada');
     }
   }
 

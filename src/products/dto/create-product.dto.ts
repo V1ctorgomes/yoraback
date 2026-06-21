@@ -71,4 +71,8 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(300)
   seoDescription?: string;
+
+  @IsOptional()
+  @IsUUID()
+  collectionId?: string | null;
 }
