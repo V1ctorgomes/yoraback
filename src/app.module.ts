@@ -7,6 +7,7 @@ import { CartModule } from './cart/cart.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { CollectionsModule } from './collections/collections.module';
+import { CustomerModule } from './customer/customer.module';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
@@ -21,6 +22,7 @@ import { ProductsModule } from './products/products.module';
     CategoriesModule,
     CheckoutModule,
     CollectionsModule,
+    CustomerModule,
     OrdersModule,
     ProductsModule,
     HealthModule,

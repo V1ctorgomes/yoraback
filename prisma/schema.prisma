@@ -22,11 +22,14 @@ model User {
   role                Role                 @default(CUSTOMER)
   isActive            Boolean              @default(true) @map("is_active")
   emailVerified       Boolean              @default(false) @map("email_verified")
+  birthDate           DateTime?            @map("birth_date") @db.Date
   lastLogin           DateTime?            @map("last_login")
   createdAt           DateTime             @default(now()) @map("created_at")
   updatedAt           DateTime             @updatedAt @map("updated_at")
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  orders              Order[]
+  addresses           CustomerAddress[]
 
   @@map("users")
 }
@@ -208,6 +211,7 @@ model Order {
   id             String      @id @default(uuid())
   orderNumber    String      @unique @map("order_number")
   customerId     String?     @map("customer_id")
+  customer       User?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerName   String      @map("customer_name")
   customerEmail  String      @map("customer_email")
   customerPhone  String      @map("customer_phone")
@@ -273,4 +277,25 @@ model Address {
   country    String  @default("BR")
 
   @@map("addresses")
+}
+
+model CustomerAddress {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipient  String
+  zipCode    String   @map("zip_code")
+  street     String
+  number     String
+  complement String?
+  district   String
+  city       String
+  state      String
+  country    String   @default("BR")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("customer_addresses")
 }

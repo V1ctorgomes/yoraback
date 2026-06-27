@@ -42,7 +42,11 @@ const orderInclude = {
 export class CheckoutService {
   constructor(private prisma: PrismaService) {}
 
-  async checkout(cartToken: string | undefined, dto: CheckoutDto) {
+  async checkout(
+    cartToken: string | undefined,
+    dto: CheckoutDto,
+    customerId?: string,
+  ) {
     if (!cartToken) {
       throw new BadRequestException('Carrinho não encontrado');
     }
@@ -91,6 +95,7 @@ export class CheckoutService {
       const createdOrder = await tx.order.create({
         data: {
           orderNumber,
+          customerId: customerId ?? null,
           customerName: dto.customer.name.trim(),
           customerEmail: dto.customer.email.trim().toLowerCase(),
           customerPhone: dto.customer.phone.trim(),

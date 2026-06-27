@@ -326,9 +326,42 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       role: user.role,
       emailVerified: user.emailVerified,
+      birthDate: user.birthDate?.toISOString().slice(0, 10) ?? null,
       lastLogin: user.lastLogin?.toISOString() ?? null,
       createdAt: user.createdAt.toISOString(),
     };
+  }
+
+  async resolveCustomerIdFromAuthorization(
+    authorization?: string,
+  ): Promise<string | undefined> {
+    if (!authorization?.startsWith('Bearer ')) {
+      return undefined;
+    }
+
+    try {
+      const token = authorization.slice(7);
+      const payload = await this.jwtService.verifyAsync<{ sub: string; role: Role }>(
+        token,
+        { secret: this.config.getOrThrow<string>('JWT_SECRET') },
+      );
+
+      if (payload.role !== Role.CUSTOMER) {
+        return undefined;
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user?.isActive) {
+        return undefined;
+      }
+
+      return user.id;
+    } catch {
+      return undefined;
+    }
   }
 
   private hashToken(token: string) {
