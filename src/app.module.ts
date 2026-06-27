@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { BannersModule } from './banners/banners.module';
 import { CartModule } from './cart/cart.module';
 import { CategoriesModule } from './categories/categories.module';
+import { CheckoutModule } from './checkout/checkout.module';
 import { CollectionsModule } from './collections/collections.module';
 import { HealthModule } from './health/health.module';
 import { ProductsModule } from './products/products.module';
@@ -17,6 +18,7 @@ import { ProductsModule } from './products/products.module';
     BannersModule,
     CartModule,
     CategoriesModule,
+    CheckoutModule,
     CollectionsModule,
     ProductsModule,
     HealthModule,
