@@ -8,13 +8,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/access.guard';
 import { CreateProductVariantDto } from './dto/create-product-variant.dto';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto';
 import { ProductVariantsService } from './product-variants.service';
 
 @Controller('admin/products/:productId/variants')
-@UseGuards(JwtAuthGuard)
+@AdminGuard()
 export class AdminProductVariantsController {
   constructor(private variantsService: ProductVariantsService) {}
 
@@ -33,7 +33,7 @@ export class AdminProductVariantsController {
 }
 
 @Controller('admin/variants')
-@UseGuards(JwtAuthGuard)
+@AdminGuard()
 export class AdminVariantsController {
   constructor(private variantsService: ProductVariantsService) {}
 

@@ -8,13 +8,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/access.guard';
 import { BannersService } from './banners.service';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 
 @Controller('admin/banners')
-@UseGuards(JwtAuthGuard)
+@AdminGuard()
 export class AdminBannersController {
   constructor(private bannersService: BannersService) {}
 

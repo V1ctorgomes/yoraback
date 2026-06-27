@@ -8,13 +8,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/access.guard';
 import { CollectionsService } from './collections.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 
 @Controller('admin/collections')
-@UseGuards(JwtAuthGuard)
+@AdminGuard()
 export class AdminCollectionsController {
   constructor(private collectionsService: CollectionsService) {}
 

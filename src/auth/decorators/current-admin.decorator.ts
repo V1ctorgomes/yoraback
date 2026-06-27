@@ -1,13 +1,2 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-
-export interface AuthAdmin {
-  id: string;
-  email: string;
-}
-
-export const CurrentAdmin = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): AuthAdmin => {
-    const request = ctx.switchToHttp().getRequest<{ user: AuthAdmin }>();
-    return request.user;
-  },
-);
+export type { AuthAdmin, AuthUser } from './current-user.decorator';
+export { CurrentAdmin, CurrentUser } from './current-user.decorator';

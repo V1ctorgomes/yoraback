@@ -8,13 +8,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/access.guard';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
 import { UpdateProductImageDto } from './dto/update-product-image.dto';
 import { ProductImagesService } from './product-images.service';
 
 @Controller('admin/products/:productId/images')
-@UseGuards(JwtAuthGuard)
+@AdminGuard()
 export class AdminProductImagesController {
   constructor(private imagesService: ProductImagesService) {}
 
@@ -33,7 +33,7 @@ export class AdminProductImagesController {
 }
 
 @Controller('admin/images')
-@UseGuards(JwtAuthGuard)
+@AdminGuard()
 export class AdminImagesController {
   constructor(private imagesService: ProductImagesService) {}
 
