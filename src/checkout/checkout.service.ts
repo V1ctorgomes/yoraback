@@ -21,6 +21,7 @@ const cartItemInclude = {
           id: true,
           name: true,
           basePrice: true,
+          coverImage: true,
           isActive: true,
         },
       },
@@ -105,6 +106,9 @@ export class CheckoutService {
               productVariantId: item.productVariantId,
               productName: item.productName,
               sku: item.sku,
+              color: item.color,
+              size: item.size,
+              imageUrl: item.imageUrl,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               subtotal: item.subtotal,
@@ -170,6 +174,9 @@ export class CheckoutService {
       productVariantId: string;
       productName: string;
       sku: string;
+      color: string;
+      size: string;
+      imageUrl: string;
       quantity: number;
       unitPrice: number;
       subtotal: number;
@@ -198,6 +205,9 @@ export class CheckoutService {
         productVariantId: variant.id,
         productName: product.name,
         sku: variant.sku,
+        color: variant.color,
+        size: variant.size,
+        imageUrl: product.coverImage,
         quantity: item.quantity,
         unitPrice,
         subtotal: unitPrice * item.quantity,

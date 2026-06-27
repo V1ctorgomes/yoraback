@@ -8,6 +8,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { CollectionsModule } from './collections/collections.module';
 import { HealthModule } from './health/health.module';
+import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { ProductsModule } from './products/products.module';
     CategoriesModule,
     CheckoutModule,
     CollectionsModule,
+    OrdersModule,
     ProductsModule,
     HealthModule,
   ],
