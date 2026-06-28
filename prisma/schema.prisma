@@ -226,6 +226,7 @@ model Order {
   items          OrderItem[]
   address        Address?
   statusHistory  OrderStatusHistory[]
+  payments       Payment[]
 
   @@map("orders")
 }
@@ -298,4 +299,53 @@ model CustomerAddress {
 
   @@index([userId])
   @@map("customer_addresses")
+}
+
+enum PaymentProvider {
+  MERCADO_PAGO
+}
+
+enum PaymentMethodType {
+  PIX
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  REFUNDED
+}
+
+model Payment {
+  id                String             @id @default(uuid())
+  orderId           String             @map("order_id")
+  order             Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider          PaymentProvider    @default(MERCADO_PAGO)
+  providerPaymentId String?            @unique @map("provider_payment_id")
+  paymentMethod     PaymentMethodType  @map("payment_method")
+  amount            Decimal            @db.Decimal(10, 2)
+  status            PaymentStatus      @default(PENDING)
+  installments      Int?
+  pixQrCode         String?            @map("pix_qr_code")
+  pixQrCodeBase64   String?            @map("pix_qr_code_base64")
+  pixCopyPaste      String?            @map("pix_copy_paste")
+  pixExpiresAt      DateTime?          @map("pix_expires_at")
+  rawResponse       Json?              @map("raw_response")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@index([orderId, createdAt])
+  @@index([status])
+  @@map("payments")
+}
+
+model PaymentWebhookEvent {
+  id               String   @id @default(uuid())
+  providerEventKey String   @unique @map("provider_event_key")
+  payload          Json
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("payment_webhook_events")
 }
