@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { seedImages } from '../common/seed-images';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
@@ -76,30 +77,32 @@ export class ProductImagesService {
       select: { id: true, slug: true, name: true, coverImage: true },
     });
 
-    const galleryRows = products.flatMap((product) => {
-      const config =
-        seedImages.products[product.slug as keyof typeof seedImages.products];
+    const galleryRows: Prisma.ProductImageCreateManyInput[] = products.flatMap(
+      (product) => {
+        const config =
+          seedImages.products[product.slug as keyof typeof seedImages.products];
 
-      if (config) {
-        return config.gallery.map((image) => ({
-          productId: product.id,
-          imageUrl: image.imageUrl,
-          altText: product.name,
-          color: image.color,
-          displayOrder: image.displayOrder,
-        }));
-      }
+        if (config) {
+          return config.gallery.map((image) => ({
+            productId: product.id,
+            imageUrl: image.imageUrl,
+            altText: product.name,
+            color: image.color,
+            displayOrder: image.displayOrder,
+          }));
+        }
 
-      return [
-        {
-          productId: product.id,
-          imageUrl: product.coverImage,
-          altText: product.name,
-          color: null,
-          displayOrder: 0,
-        },
-      ];
-    });
+        return [
+          {
+            productId: product.id,
+            imageUrl: product.coverImage,
+            altText: product.name,
+            color: null,
+            displayOrder: 0,
+          },
+        ];
+      },
+    );
 
     if (galleryRows.length > 0) {
       await this.prisma.productImage.createMany({ data: galleryRows });
