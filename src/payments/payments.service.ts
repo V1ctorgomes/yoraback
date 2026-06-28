@@ -404,6 +404,7 @@ export class PaymentsService {
           orderId,
           previousStatus: order.status,
           newStatus: nextOrderStatus!,
+          adminId: 'system',
           adminEmail: 'system@mercadopago',
         },
       });
