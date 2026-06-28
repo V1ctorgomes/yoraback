@@ -8,12 +8,14 @@ import { AuthService } from '../auth/auth.service';
 import { ChangePasswordDto } from '../auth/dto/change-password.dto';
 import { SHIPPING_LABELS, ShippingMethod } from '../checkout/dto/shipping-method.enum';
 import { PrismaService } from '../prisma/prisma.service';
+import { CustomersService } from './customers.service';
 import { CreateCustomerAddressDto } from './dto/create-customer-address.dto';
 import {
   CustomerOrdersSort,
   QueryCustomerOrdersDto,
 } from './dto/query-customer-orders.dto';
 import { UpdateCustomerAddressDto } from './dto/update-customer-address.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { UpdateMeProfileDto } from './dto/update-me-profile.dto';
 
 const orderListInclude = {
@@ -30,15 +32,27 @@ export class CustomerAccountService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
+    private customersService: CustomersService,
   ) {}
+
+  async getCustomer(userId: string) {
+    const customer = await this.customersService.getByUserIdOrThrow(userId);
+    return this.customersService.mapCustomer(customer);
+  }
+
+  async updateCustomerProfile(userId: string, dto: UpdateCustomerDto) {
+    const customer = await this.customersService.getByUserIdOrThrow(userId);
+    return this.customersService.updateCustomer(customer.id, dto);
+  }
 
   async getAccountOverview(userId: string) {
     const user = await this.authService.getProfile(userId);
-    const orderScope = this.orderScope(userId, user.email);
+    const customerId = await this.resolveCustomerId(userId);
+    const orderScope = this.customersService.orderScope(customerId);
 
     const [totalOrders, addressCount, lastOrder] = await Promise.all([
       this.prisma.order.count({ where: orderScope }),
-      this.prisma.customerAddress.count({ where: { userId } }),
+      this.prisma.customerAddress.count({ where: { customerId } }),
       this.prisma.order.findFirst({
         where: orderScope,
         orderBy: { createdAt: 'desc' },
@@ -90,8 +104,9 @@ export class CustomerAccountService {
   }
 
   async listAddresses(userId: string) {
+    const customerId = await this.resolveCustomerId(userId);
     const addresses = await this.prisma.customerAddress.findMany({
-      where: { userId },
+      where: { customerId },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'desc' }],
     });
 
@@ -99,19 +114,23 @@ export class CustomerAccountService {
   }
 
   async createAddress(userId: string, dto: CreateCustomerAddressDto) {
+    const customerId = await this.resolveCustomerId(userId);
+
     return this.prisma.$transaction(async (tx) => {
-      const existingCount = await tx.customerAddress.count({ where: { userId } });
+      const existingCount = await tx.customerAddress.count({
+        where: { customerId },
+      });
       const isPrimary = dto.isPrimary ?? existingCount === 0;
 
       if (isPrimary) {
         await tx.customerAddress.updateMany({
-          where: { userId },
+          where: { customerId },
           data: { isPrimary: false },
         });
       }
 
       const address = await tx.customerAddress.create({
-        data: this.buildAddressData(userId, dto, isPrimary),
+        data: this.buildAddressData(customerId, dto, isPrimary),
       });
 
       return this.mapAddress(address);
@@ -123,12 +142,13 @@ export class CustomerAccountService {
     addressId: string,
     dto: UpdateCustomerAddressDto,
   ) {
-    await this.ensureAddressOwner(userId, addressId);
+    const customerId = await this.resolveCustomerId(userId);
+    await this.ensureAddressOwner(customerId, addressId);
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.isPrimary) {
         await tx.customerAddress.updateMany({
-          where: { userId },
+          where: { customerId },
           data: { isPrimary: false },
         });
       }
@@ -164,7 +184,8 @@ export class CustomerAccountService {
   }
 
   async deleteAddress(userId: string, addressId: string) {
-    await this.ensureAddressOwner(userId, addressId);
+    const customerId = await this.resolveCustomerId(userId);
+    await this.ensureAddressOwner(customerId, addressId);
 
     const address = await this.prisma.customerAddress.findUnique({
       where: { id: addressId },
@@ -178,7 +199,7 @@ export class CustomerAccountService {
 
     if (address.isPrimary) {
       const next = await this.prisma.customerAddress.findFirst({
-        where: { userId },
+        where: { customerId },
         orderBy: { createdAt: 'desc' },
       });
 
@@ -193,11 +214,12 @@ export class CustomerAccountService {
     return { message: 'Endereço removido com sucesso' };
   }
 
-  async listOrders(userId: string, email: string, query: QueryCustomerOrdersDto) {
+  async listOrders(userId: string, query: QueryCustomerOrdersDto) {
+    const customerId = await this.resolveCustomerId(userId);
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
-    const where = this.buildOrdersWhere(userId, email, query.search);
+    const where = this.buildOrdersWhere(customerId, query.search);
     const orderBy =
       query.sort === CustomerOrdersSort.OLDEST
         ? { createdAt: 'asc' as const }
@@ -225,11 +247,12 @@ export class CustomerAccountService {
     };
   }
 
-  async getOrderByNumber(userId: string, email: string, orderNumber: string) {
+  async getOrderByNumber(userId: string, orderNumber: string) {
+    const customerId = await this.resolveCustomerId(userId);
     const order = await this.prisma.order.findFirst({
       where: {
         orderNumber,
-        ...this.orderScope(userId, email),
+        customerId,
       },
       include: orderDetailInclude,
     });
@@ -241,18 +264,17 @@ export class CustomerAccountService {
     return this.mapOrderDetail(order);
   }
 
-  private orderScope(userId: string, email: string): Prisma.OrderWhereInput {
-    return {
-      OR: [{ customerId: userId }, { customerId: null, customerEmail: email }],
-    };
+  private async resolveCustomerId(userId: string): Promise<string> {
+    const customer = await this.customersService.getByUserIdOrThrow(userId);
+    return customer.id;
   }
 
   private buildOrdersWhere(
-    userId: string,
-    email: string,
+    customerId: string,
     search?: string,
   ): Prisma.OrderWhereInput {
-    const where: Prisma.OrderWhereInput = this.orderScope(userId, email);
+    const where: Prisma.OrderWhereInput =
+      this.customersService.orderScope(customerId);
 
     if (search?.trim()) {
       where.orderNumber = {
@@ -264,23 +286,23 @@ export class CustomerAccountService {
     return where;
   }
 
-  private async ensureAddressOwner(userId: string, addressId: string) {
+  private async ensureAddressOwner(customerId: string, addressId: string) {
     const address = await this.prisma.customerAddress.findUnique({
       where: { id: addressId },
     });
 
-    if (!address || address.userId !== userId) {
+    if (!address || address.customerId !== customerId) {
       throw new ForbiddenException('Endereço não encontrado');
     }
   }
 
   private buildAddressData(
-    userId: string,
+    customerId: string,
     dto: CreateCustomerAddressDto,
     isPrimary: boolean,
   ) {
     return {
-      userId,
+      customerId,
       recipient: dto.recipient.trim(),
       zipCode: dto.zipCode.replace(/\D/g, ''),
       street: dto.street.trim(),

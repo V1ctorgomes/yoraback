@@ -16,12 +16,26 @@ import { CustomerAccountService } from './customer-account.service';
 import { CreateCustomerAddressDto } from './dto/create-customer-address.dto';
 import { QueryCustomerOrdersDto } from './dto/query-customer-orders.dto';
 import { UpdateCustomerAddressDto } from './dto/update-customer-address.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { UpdateMeProfileDto } from './dto/update-me-profile.dto';
 
 @Controller('me')
 @CustomerGuard()
 export class MeController {
   constructor(private customerAccountService: CustomerAccountService) {}
+
+  @Get('customer')
+  getCustomer(@CurrentUser() user: AuthUser) {
+    return this.customerAccountService.getCustomer(user.id);
+  }
+
+  @Patch('customer')
+  updateCustomer(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateCustomerDto,
+  ) {
+    return this.customerAccountService.updateCustomerProfile(user.id, dto);
+  }
 
   @Get()
   getOverview(@CurrentUser() user: AuthUser) {
@@ -76,15 +90,11 @@ export class MeController {
     @CurrentUser() user: AuthUser,
     @Query() query: QueryCustomerOrdersDto,
   ) {
-    return this.customerAccountService.listOrders(user.id, user.email, query);
+    return this.customerAccountService.listOrders(user.id, query);
   }
 
   @Get('orders/:number')
   getOrder(@CurrentUser() user: AuthUser, @Param('number') number: string) {
-    return this.customerAccountService.getOrderByNumber(
-      user.id,
-      user.email,
-      number,
-    );
+    return this.customerAccountService.getOrderByNumber(user.id, number);
   }
 }

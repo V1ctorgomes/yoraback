@@ -18,9 +18,9 @@ export class CheckoutController {
     @Headers('authorization') authorization: string | undefined,
     @Body() dto: CheckoutDto,
   ) {
-    const customerId =
-      await this.authService.resolveCustomerIdFromAuthorization(authorization);
+    const linkedUserId =
+      await this.authService.resolveLinkedUserIdFromAuthorization(authorization);
 
-    return this.checkoutService.checkout(cartToken, dto, customerId);
+    return this.checkoutService.checkout(cartToken, dto, linkedUserId);
   }
 }

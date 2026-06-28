@@ -12,6 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { CustomersService } from '../customer/customers.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -38,6 +39,7 @@ export class AuthService {
     private jwtService: JwtService,
     private config: ConfigService,
     private loginAttempts: LoginAttemptService,
+    private customersService: CustomersService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -57,6 +59,13 @@ export class AuthService {
         passwordHash,
         role: Role.CUSTOMER,
       },
+    });
+
+    await this.customersService.linkUserOnRegister({
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone ?? undefined,
     });
 
     return this.buildAuthResponse(user);
@@ -89,6 +98,15 @@ export class AuthService {
       where: { id: user.id },
       data: { lastLogin: new Date() },
     });
+
+    if (updated.role === Role.CUSTOMER) {
+      await this.customersService.linkUserOnRegister({
+        userId: updated.id,
+        name: updated.name,
+        email: updated.email,
+        phone: updated.phone ?? undefined,
+      });
+    }
 
     return this.buildAuthResponse(updated);
   }
@@ -332,7 +350,7 @@ export class AuthService {
     };
   }
 
-  async resolveCustomerIdFromAuthorization(
+  async resolveLinkedUserIdFromAuthorization(
     authorization?: string,
   ): Promise<string | undefined> {
     if (!authorization?.startsWith('Bearer ')) {
@@ -359,6 +377,39 @@ export class AuthService {
       }
 
       return user.id;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async resolveCustomerIdFromAuthorization(
+    authorization?: string,
+  ): Promise<string | undefined> {
+    if (!authorization?.startsWith('Bearer ')) {
+      return undefined;
+    }
+
+    try {
+      const token = authorization.slice(7);
+      const payload = await this.jwtService.verifyAsync<{ sub: string; role: Role }>(
+        token,
+        { secret: this.config.getOrThrow<string>('JWT_SECRET') },
+      );
+
+      if (payload.role !== Role.CUSTOMER) {
+        return undefined;
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: { customer: true },
+      });
+
+      if (!user?.isActive || !user.customer) {
+        return undefined;
+      }
+
+      return user.customer.id;
     } catch {
       return undefined;
     }

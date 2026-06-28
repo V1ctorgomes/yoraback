@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CustomersCoreModule } from '../customer/customers-core.module';
 import { AdminAuthController, PublicAuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LoginAttemptService } from './login-attempt.service';
@@ -10,6 +11,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
+    CustomersCoreModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

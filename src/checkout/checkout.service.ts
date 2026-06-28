@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrderStatus, Prisma } from '@prisma/client';
+import { CustomersService } from '../customer/customers.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import {
@@ -40,12 +41,15 @@ const orderInclude = {
 
 @Injectable()
 export class CheckoutService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private customersService: CustomersService,
+  ) {}
 
   async checkout(
     cartToken: string | undefined,
     dto: CheckoutDto,
-    customerId?: string,
+    linkedUserId?: string,
   ) {
     if (!cartToken) {
       throw new BadRequestException('Carrinho não encontrado');
@@ -68,6 +72,13 @@ export class CheckoutService {
     const shippingPrice = SHIPPING_PRICES[dto.shippingMethod];
     const discount = 0;
     const total = subtotal + shippingPrice - discount;
+
+    const customer = await this.customersService.findOrCreateForCheckout({
+      name: dto.customer.name,
+      email: dto.customer.email,
+      phone: dto.customer.phone,
+      linkedUserId,
+    });
 
     const order = await this.prisma.$transaction(async (tx) => {
       for (const item of validatedItems) {
@@ -95,7 +106,7 @@ export class CheckoutService {
       const createdOrder = await tx.order.create({
         data: {
           orderNumber,
-          customerId: customerId ?? null,
+          customerId: customer.id,
           customerName: dto.customer.name.trim(),
           customerEmail: dto.customer.email.trim().toLowerCase(),
           customerPhone: dto.customer.phone.trim(),

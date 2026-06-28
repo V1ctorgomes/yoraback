@@ -28,8 +28,7 @@ model User {
   updatedAt           DateTime             @updatedAt @map("updated_at")
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
-  orders              Order[]
-  addresses           CustomerAddress[]
+  customer            Customer?
 
   @@map("users")
 }
@@ -210,8 +209,8 @@ enum OrderStatus {
 model Order {
   id             String      @id @default(uuid())
   orderNumber    String      @unique @map("order_number")
-  customerId     String?     @map("customer_id")
-  customer       User?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId     String      @map("customer_id")
+  customer       Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
   customerName   String      @map("customer_name")
   customerEmail  String      @map("customer_email")
   customerPhone  String      @map("customer_phone")
@@ -280,10 +279,27 @@ model Address {
   @@map("addresses")
 }
 
+model Customer {
+  id        String            @id @default(uuid())
+  name      String
+  email     String            @unique
+  phone     String
+  isGuest   Boolean           @default(true) @map("is_guest")
+  userId    String?           @unique @map("user_id")
+  user      User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+  orders    Order[]
+  addresses CustomerAddress[]
+
+  @@index([email])
+  @@map("customers")
+}
+
 model CustomerAddress {
   id         String   @id @default(uuid())
-  userId     String   @map("user_id")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   recipient  String
   zipCode    String   @map("zip_code")
   street     String
@@ -297,7 +313,7 @@ model CustomerAddress {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  @@index([userId])
+  @@index([customerId])
   @@map("customer_addresses")
 }
 
