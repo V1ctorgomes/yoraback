@@ -2,8 +2,13 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
+    "rootDir": ".",
     "module": "commonjs",
     "moduleResolution": "node"
   },
-  "include": ["prisma/seed.ts"]
+  "include": [
+    "prisma/seed.ts",
+    "src/common/seed-images.ts",
+    "src/common/sync-seed-images.ts"
+  ]
 }
