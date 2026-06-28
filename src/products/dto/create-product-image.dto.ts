@@ -21,4 +21,9 @@ export class CreateProductImageDto {
   @IsInt()
   @Min(0)
   displayOrder?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  color?: string | null;
 }

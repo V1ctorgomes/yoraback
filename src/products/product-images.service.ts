@@ -33,6 +33,7 @@ export class ProductImagesService {
         productId,
         imageUrl: dto.imageUrl.trim(),
         altText: dto.altText?.trim() || null,
+        color: dto.color?.trim() || null,
         displayOrder: dto.displayOrder ?? (lastImage?.displayOrder ?? -1) + 1,
       },
     });
@@ -50,6 +51,9 @@ export class ProductImagesService {
         }),
         ...(dto.displayOrder !== undefined && {
           displayOrder: dto.displayOrder,
+        }),
+        ...(dto.color !== undefined && {
+          color: dto.color?.trim() || null,
         }),
       },
     });

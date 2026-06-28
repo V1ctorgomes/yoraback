@@ -32,6 +32,17 @@ const publicListSelect = {
   isFeatured: true,
   isNew: true,
   category: { select: categorySelect },
+  images: {
+    orderBy: { displayOrder: 'asc' as const },
+    take: 3,
+    select: {
+      id: true,
+      imageUrl: true,
+      altText: true,
+      color: true,
+      displayOrder: true,
+    },
+  },
 } as const;
 
 const publicDetailSelect = {
@@ -45,6 +56,7 @@ const publicDetailSelect = {
       id: true,
       imageUrl: true,
       altText: true,
+      color: true,
       displayOrder: true,
     },
   },

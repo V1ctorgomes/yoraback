@@ -14,6 +14,7 @@ const publicSelect = {
   slug: true,
   description: true,
   imageUrl: true,
+  bannerImageUrl: true,
   displayOrder: true,
 } as const;
 
@@ -68,6 +69,7 @@ export class CategoriesService {
         slug,
         description: dto.description?.trim() || null,
         imageUrl: dto.imageUrl?.trim() || null,
+        bannerImageUrl: dto.bannerImageUrl?.trim() || null,
         displayOrder: dto.displayOrder ?? 0,
         isActive: dto.isActive ?? true,
       },
@@ -92,6 +94,9 @@ export class CategoriesService {
         }),
         ...(dto.imageUrl !== undefined && {
           imageUrl: dto.imageUrl?.trim() || null,
+        }),
+        ...(dto.bannerImageUrl !== undefined && {
+          bannerImageUrl: dto.bannerImageUrl?.trim() || null,
         }),
         ...(dto.displayOrder !== undefined && {
           displayOrder: dto.displayOrder,
@@ -121,6 +126,8 @@ export class CategoriesService {
           description: 'Peças versáteis para treino e dia a dia.',
           imageUrl:
             'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80&auto=format&fit=crop',
+          bannerImageUrl:
+            'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1600&q=80&auto=format&fit=crop',
           displayOrder: 0,
         },
         {
@@ -129,6 +136,8 @@ export class CategoriesService {
           description: 'Conforto premium para antes e depois do treino.',
           imageUrl:
             'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80&auto=format&fit=crop',
+          bannerImageUrl:
+            'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1600&q=80&auto=format&fit=crop',
           displayOrder: 1,
         },
         {
@@ -137,6 +146,8 @@ export class CategoriesService {
           description: 'Modelagens que acompanham cada movimento.',
           imageUrl:
             'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&q=80&auto=format&fit=crop',
+          bannerImageUrl:
+            'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=1600&q=80&auto=format&fit=crop',
           displayOrder: 2,
         },
         {
@@ -145,6 +156,8 @@ export class CategoriesService {
           description: 'Estilo funcional para completar o look.',
           imageUrl:
             'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80&auto=format&fit=crop',
+          bannerImageUrl:
+            'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=1600&q=80&auto=format&fit=crop',
           displayOrder: 3,
         },
         {
@@ -153,6 +166,8 @@ export class CategoriesService {
           description: 'Detalhes que elevam sua rotina.',
           imageUrl:
             'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800&q=80&auto=format&fit=crop',
+          bannerImageUrl:
+            'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=1600&q=80&auto=format&fit=crop',
           displayOrder: 4,
         },
       ],

@@ -37,6 +37,13 @@ export class CreateCategoryDto {
   imageUrl?: string;
 
   @IsOptional()
+  @IsUrl(
+    { require_protocol: true },
+    { message: 'bannerImageUrl deve ser uma URL válida' },
+  )
+  bannerImageUrl?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   displayOrder?: number;
