@@ -206,28 +206,49 @@ enum OrderStatus {
   REFUNDED
 }
 
+model ShippingMethod {
+  id           String   @id @default(uuid())
+  name         String
+  provider     String
+  serviceCode  String   @map("service_code")
+  isActive     Boolean  @default(true) @map("is_active")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  orders       Order[]
+
+  @@unique([provider, serviceCode])
+  @@map("shipping_methods")
+}
+
 model Order {
-  id             String      @id @default(uuid())
-  orderNumber    String      @unique @map("order_number")
-  customerId     String      @map("customer_id")
-  customer       Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  customerName   String      @map("customer_name")
-  customerEmail  String      @map("customer_email")
-  customerPhone  String      @map("customer_phone")
-  status         OrderStatus @default(WAITING_PAYMENT)
-  shippingMethod String      @map("shipping_method")
-  subtotal       Decimal     @db.Decimal(10, 2)
-  shippingPrice  Decimal     @map("shipping_price") @db.Decimal(10, 2)
-  discount       Decimal     @default(0) @db.Decimal(10, 2)
-  total          Decimal     @db.Decimal(10, 2)
-  paymentExpiresAt DateTime  @map("payment_expires_at")
-  stockRestored  Boolean     @default(false) @map("stock_restored")
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  items          OrderItem[]
-  address        Address?
-  statusHistory  OrderStatusHistory[]
-  payments       Payment[]
+  id                   String          @id @default(uuid())
+  orderNumber          String          @unique @map("order_number")
+  customerId           String          @map("customer_id")
+  customer             Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerName         String          @map("customer_name")
+  customerEmail        String          @map("customer_email")
+  customerPhone        String          @map("customer_phone")
+  status               OrderStatus     @default(WAITING_PAYMENT)
+  shippingMethod       String          @map("shipping_method")
+  shippingMethodId     String?         @map("shipping_method_id")
+  shippingMethodRef    ShippingMethod? @relation(fields: [shippingMethodId], references: [id], onDelete: SetNull)
+  shippingProvider     String?         @map("shipping_provider")
+  shippingService      String?         @map("shipping_service")
+  shippingPrice        Decimal         @map("shipping_price") @db.Decimal(10, 2)
+  shippingDeadlineDays Int?            @map("shipping_deadline_days")
+  trackingCode         String?         @map("tracking_code")
+  subtotal             Decimal         @db.Decimal(10, 2)
+  discount             Decimal         @default(0) @db.Decimal(10, 2)
+  total                Decimal         @db.Decimal(10, 2)
+  paymentExpiresAt     DateTime        @map("payment_expires_at")
+  stockRestored        Boolean         @default(false) @map("stock_restored")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+  items                OrderItem[]
+  address              Address?
+  statusHistory        OrderStatusHistory[]
+  payments             Payment[]
 
   @@map("orders")
 }

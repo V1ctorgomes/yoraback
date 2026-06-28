@@ -45,6 +45,35 @@ async function main() {
       ],
     });
   }
+
+  const shippingMethodCount = await prisma.shippingMethod.count();
+  if (shippingMethodCount === 0) {
+    await prisma.shippingMethod.createMany({
+      data: [
+        {
+          name: 'PAC',
+          provider: 'Correios',
+          serviceCode: 'pac',
+          isActive: true,
+          displayOrder: 0,
+        },
+        {
+          name: 'SEDEX',
+          provider: 'Correios',
+          serviceCode: 'sedex',
+          isActive: true,
+          displayOrder: 1,
+        },
+        {
+          name: 'Retirada na Loja',
+          provider: 'RetiradaLoja',
+          serviceCode: 'pickup',
+          isActive: true,
+          displayOrder: 2,
+        },
+      ],
+    });
+  }
 }
 
 main()

@@ -6,7 +6,6 @@ import {
 import { Prisma } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { ChangePasswordDto } from '../auth/dto/change-password.dto';
-import { SHIPPING_LABELS, ShippingMethod } from '../checkout/dto/shipping-method.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomersService } from './customers.service';
 import { CreateCustomerAddressDto } from './dto/create-customer-address.dto';
@@ -383,9 +382,7 @@ export class CustomerAccountService {
       total: Number(order.total),
       itemCount: order.items.reduce((total, item) => total + item.quantity, 0),
       createdAt: order.createdAt.toISOString(),
-      shippingLabel:
-        SHIPPING_LABELS[order.shippingMethod as ShippingMethod] ??
-        order.shippingMethod,
+      shippingLabel: order.shippingService ?? order.shippingMethod,
     };
   }
 
@@ -396,9 +393,11 @@ export class CustomerAccountService {
       orderNumber: order.orderNumber,
       status: order.status,
       shippingMethod: order.shippingMethod,
-      shippingLabel:
-        SHIPPING_LABELS[order.shippingMethod as ShippingMethod] ??
-        order.shippingMethod,
+      shippingLabel: order.shippingService ?? order.shippingMethod,
+      shippingProvider: order.shippingProvider,
+      shippingService: order.shippingService,
+      shippingDeadlineDays: order.shippingDeadlineDays,
+      trackingCode: order.trackingCode,
       subtotal: Number(order.subtotal),
       shippingPrice: Number(order.shippingPrice),
       discount: Number(order.discount),

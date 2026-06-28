@@ -1,8 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsEnum, ValidateNested } from 'class-validator';
+import { IsUUID, ValidateNested } from 'class-validator';
 import { CheckoutAddressDto } from './checkout-address.dto';
 import { CheckoutCustomerDto } from './checkout-customer.dto';
-import { ShippingMethod } from './shipping-method.enum';
 
 export class CheckoutDto {
   @ValidateNested()
@@ -13,6 +12,6 @@ export class CheckoutDto {
   @Type(() => CheckoutAddressDto)
   address!: CheckoutAddressDto;
 
-  @IsEnum(ShippingMethod)
-  shippingMethod!: ShippingMethod;
+  @IsUUID()
+  shippingMethodId!: string;
 }

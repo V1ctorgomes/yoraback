@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { AuthAdmin } from '../auth/decorators/current-admin.decorator';
-import { SHIPPING_LABELS, ShippingMethod } from '../checkout/dto/shipping-method.enum';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderStockService } from './order-stock.service';
 import {
@@ -13,6 +12,7 @@ import {
   QueryAdminOrdersDto,
 } from './dto/query-admin-orders.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { UpdateOrderTrackingDto } from './dto/update-order-tracking.dto';
 import {
   canTransitionStatus,
   getAllowedNextStatuses,
@@ -163,6 +163,27 @@ export class AdminOrdersService {
     return this.mapDetail(updated);
   }
 
+  async updateTracking(id: string, dto: UpdateOrderTrackingDto) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+
+    if (!order) {
+      throw new NotFoundException('Pedido não encontrado');
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { id },
+      data: {
+        trackingCode:
+          dto.trackingCode === undefined
+            ? order.trackingCode
+            : dto.trackingCode?.trim() || null,
+      },
+      include: orderDetailInclude,
+    });
+
+    return this.mapDetail(updated);
+  }
+
   private buildWhere(query: QueryAdminOrdersDto): Prisma.OrderWhereInput {
     const where: Prisma.OrderWhereInput = {};
 
@@ -243,9 +264,7 @@ export class AdminOrdersService {
       itemCount,
       total: Number(order.total),
       shippingMethod: order.shippingMethod,
-      shippingLabel:
-        SHIPPING_LABELS[order.shippingMethod as ShippingMethod] ??
-        order.shippingMethod,
+      shippingLabel: order.shippingService ?? order.shippingMethod,
       createdAt: order.createdAt.toISOString(),
     };
   }
@@ -269,9 +288,11 @@ export class AdminOrdersService {
         phone: order.customerPhone,
       },
       shippingMethod: order.shippingMethod,
-      shippingLabel:
-        SHIPPING_LABELS[order.shippingMethod as ShippingMethod] ??
-        order.shippingMethod,
+      shippingLabel: order.shippingService ?? order.shippingMethod,
+      shippingProvider: order.shippingProvider,
+      shippingService: order.shippingService,
+      shippingDeadlineDays: order.shippingDeadlineDays,
+      trackingCode: order.trackingCode,
       subtotal: Number(order.subtotal),
       shippingPrice: Number(order.shippingPrice),
       discount: Number(order.discount),

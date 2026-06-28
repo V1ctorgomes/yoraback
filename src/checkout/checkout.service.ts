@@ -9,12 +9,8 @@ import { CustomersService } from '../customer/customers.service';
 import { buildPaymentExpiresAt } from '../orders/order-payment.constants';
 import { OrderExpirationService } from '../orders/order-expiration.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShippingService } from '../shipping/shipping.service';
 import { CheckoutDto } from './dto/checkout.dto';
-import {
-  SHIPPING_LABELS,
-  SHIPPING_PRICES,
-  ShippingMethod,
-} from './dto/shipping-method.enum';
 
 const cartItemInclude = {
   productVariant: {
@@ -47,6 +43,7 @@ export class CheckoutService {
     private prisma: PrismaService,
     private customersService: CustomersService,
     private orderExpiration: OrderExpirationService,
+    private shippingService: ShippingService,
   ) {}
 
   async checkout(
@@ -72,7 +69,18 @@ export class CheckoutService {
       (total, item) => total + item.subtotal,
       0,
     );
-    const shippingPrice = SHIPPING_PRICES[dto.shippingMethod];
+
+    const zipCode = dto.address.zipCode.replace(/\D/g, '');
+    const shippingQuote = await this.shippingService.validateSelectedQuote(
+      dto.shippingMethodId,
+      zipCode,
+      validatedItems.map((item) => ({
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+      })),
+    );
+
+    const shippingPrice = shippingQuote.price;
     const discount = 0;
     const total = subtotal + shippingPrice - discount;
 
@@ -114,9 +122,13 @@ export class CheckoutService {
           customerEmail: dto.customer.email.trim().toLowerCase(),
           customerPhone: dto.customer.phone.trim(),
           status: OrderStatus.WAITING_PAYMENT,
-          shippingMethod: dto.shippingMethod,
-          subtotal,
+          shippingMethod: shippingQuote.serviceCode,
+          shippingMethodId: shippingQuote.shippingMethodId,
+          shippingProvider: shippingQuote.provider,
+          shippingService: shippingQuote.service,
           shippingPrice,
+          shippingDeadlineDays: shippingQuote.deadline,
+          subtotal,
           discount,
           total,
           paymentExpiresAt: buildPaymentExpiresAt(),
@@ -172,22 +184,6 @@ export class CheckoutService {
     }
 
     return this.mapOrder(order);
-  }
-
-  getShippingOptions() {
-    return (Object.values(ShippingMethod) as ShippingMethod[]).map(
-      (method) => ({
-        method,
-        label: SHIPPING_LABELS[method],
-        price: SHIPPING_PRICES[method],
-        estimatedDays:
-          method === ShippingMethod.PAC
-            ? '8 a 12 dias úteis'
-            : method === ShippingMethod.SEDEX
-              ? '2 a 4 dias úteis'
-              : 'Disponível em 1 dia útil',
-      }),
-    );
   }
 
   private validateCartItems(items: CartItemWithRelations[]) {
@@ -276,11 +272,14 @@ export class CheckoutService {
         phone: order.customerPhone,
       },
       shippingMethod: order.shippingMethod,
-      shippingLabel:
-        SHIPPING_LABELS[order.shippingMethod as ShippingMethod] ??
-        order.shippingMethod,
-      subtotal: Number(order.subtotal),
+      shippingMethodId: order.shippingMethodId,
+      shippingProvider: order.shippingProvider,
+      shippingService: order.shippingService,
+      shippingLabel: order.shippingService ?? order.shippingMethod,
       shippingPrice: Number(order.shippingPrice),
+      shippingDeadlineDays: order.shippingDeadlineDays,
+      trackingCode: order.trackingCode,
+      subtotal: Number(order.subtotal),
       discount: Number(order.discount),
       total: Number(order.total),
       paymentExpiresAt: order.paymentExpiresAt.toISOString(),

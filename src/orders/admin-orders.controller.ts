@@ -13,6 +13,7 @@ import { AdminGuard } from '../auth/guards/access.guard';
 import { AdminOrdersService } from './admin-orders.service';
 import { QueryAdminOrdersDto } from './dto/query-admin-orders.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { UpdateOrderTrackingDto } from './dto/update-order-tracking.dto';
 
 @Controller('admin/orders')
 @AdminGuard()
@@ -41,5 +42,10 @@ export class AdminOrdersController {
     @CurrentAdmin() admin: AuthAdmin,
   ) {
     return this.adminOrdersService.updateStatus(id, dto, admin);
+  }
+
+  @Patch(':id/tracking')
+  updateTracking(@Param('id') id: string, @Body() dto: UpdateOrderTrackingDto) {
+    return this.adminOrdersService.updateTracking(id, dto);
   }
 }
