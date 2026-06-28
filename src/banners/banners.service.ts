@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
+import { seedImages } from '../common/seed-images';
 
 @Injectable()
 export class BannersService {
@@ -97,8 +98,7 @@ export class BannersService {
           title: 'Summer Drop',
           subtitle:
             'Peças leves para treinar, viver e brilhar — edição limitada.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1920&q=80&auto=format&fit=crop',
+          imageUrl: seedImages.banners.summerDrop,
           buttonText: 'Explorar coleção',
           buttonLink: '/colecoes/summer-drop',
           displayOrder: 0,
@@ -107,8 +107,7 @@ export class BannersService {
         {
           title: 'Essentials',
           subtitle: 'Os favoritos de quem entende de estilo e conforto.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1920&q=80&auto=format&fit=crop',
+          imageUrl: seedImages.banners.essentials,
           buttonText: 'Ver best sellers',
           buttonLink: '/colecoes/essentials',
           displayOrder: 1,

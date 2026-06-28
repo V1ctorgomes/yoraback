@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { isValidSlug, slugify } from '../common/utils/slug.util';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { seedImages } from '../common/seed-images';
 
 const publicSelect = {
   id: true,
@@ -124,50 +125,35 @@ export class CategoriesService {
           name: 'Camisetas',
           slug: 'camisetas',
           description: 'Peças versáteis para treino e dia a dia.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80&auto=format&fit=crop',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1600&q=80&auto=format&fit=crop',
+          ...seedImages.categories.camisetas,
           displayOrder: 0,
         },
         {
           name: 'Moletons',
           slug: 'moletons',
           description: 'Conforto premium para antes e depois do treino.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80&auto=format&fit=crop',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1600&q=80&auto=format&fit=crop',
+          ...seedImages.categories.moletons,
           displayOrder: 1,
         },
         {
           name: 'Calças',
           slug: 'calcas',
           description: 'Modelagens que acompanham cada movimento.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&q=80&auto=format&fit=crop',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=1600&q=80&auto=format&fit=crop',
+          ...seedImages.categories.calcas,
           displayOrder: 2,
         },
         {
           name: 'Bonés',
           slug: 'bones',
           description: 'Estilo funcional para completar o look.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80&auto=format&fit=crop',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=1600&q=80&auto=format&fit=crop',
+          ...seedImages.categories.bones,
           displayOrder: 3,
         },
         {
           name: 'Acessórios',
           slug: 'acessorios',
           description: 'Detalhes que elevam sua rotina.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800&q=80&auto=format&fit=crop',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=1600&q=80&auto=format&fit=crop',
+          ...seedImages.categories.acessorios,
           displayOrder: 4,
         },
       ],

@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { seedImages } from '../src/common/seed-images';
+import { syncSeedImages } from '../src/common/sync-seed-images';
 
 const prisma = new PrismaClient();
 
@@ -25,8 +27,7 @@ async function main() {
           title: 'Summer Drop',
           subtitle:
             'Peças leves para treinar, viver e brilhar — edição limitada.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1920&q=80&auto=format&fit=crop',
+          imageUrl: seedImages.banners.summerDrop,
           buttonText: 'Explorar coleção',
           buttonLink: '/colecoes/summer-drop',
           displayOrder: 0,
@@ -35,8 +36,7 @@ async function main() {
         {
           title: 'Essentials',
           subtitle: 'Os favoritos de quem entende de estilo e conforto.',
-          imageUrl:
-            'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1920&q=80&auto=format&fit=crop',
+          imageUrl: seedImages.banners.essentials,
           buttonText: 'Ver best sellers',
           buttonLink: '/colecoes/essentials',
           displayOrder: 1,
@@ -74,6 +74,8 @@ async function main() {
       ],
     });
   }
+
+  await syncSeedImages(prisma);
 }
 
 main()

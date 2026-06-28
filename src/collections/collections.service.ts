@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { QueryCollectionsDto } from './dto/query-collections.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
+import { seedImages } from '../common/seed-images';
 
 const categorySelect = {
   id: true,
@@ -210,10 +211,7 @@ export class CollectionsService {
           slug: 'winter-2026',
           description:
             'Peças desenvolvidas para performance e conforto nos dias mais frios.',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=1600&q=80',
-          thumbnailImageUrl:
-            'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80',
+          ...seedImages.collections['winter-2026'],
           launchDate: new Date('2026-06-01T00:00:00.000Z'),
           isFeatured: true,
         },
@@ -222,10 +220,7 @@ export class CollectionsService {
           slug: 'street-vol-1',
           description:
             'O primeiro drop urbano da Yora, pensado para transitar do treino à rua.',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1600&q=80',
-          thumbnailImageUrl:
-            'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80',
+          ...seedImages.collections['street-vol-1'],
           launchDate: new Date('2026-05-15T00:00:00.000Z'),
           isFeatured: true,
         },
@@ -234,10 +229,7 @@ export class CollectionsService {
           slug: 'black-collection',
           description:
             'Essenciais em preto absoluto para compor looks minimalistas.',
-          bannerImageUrl:
-            'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=1600&q=80',
-          thumbnailImageUrl:
-            'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&q=80',
+          ...seedImages.collections['black-collection'],
           launchDate: new Date('2026-04-01T00:00:00.000Z'),
           endDate: new Date('2026-12-31T23:59:59.000Z'),
           isFeatured: false,

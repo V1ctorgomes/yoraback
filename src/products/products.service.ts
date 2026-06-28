@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { QueryProductsDto } from './dto/query-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { seedImages } from '../common/seed-images';
 
 const categorySelect = {
   id: true,
@@ -260,8 +261,7 @@ export class ProductsService {
             'A Legging Flow foi desenvolvida para treinos intensos e uso diário. Tecido respirável, toque macio e modelagem que valoriza o corpo em movimento.',
           categoryId: calcasId,
           basePrice: 289.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=600&q=80',
+          coverImage: seedImages.products['legging-flow'],
           isFeatured: true,
           isNew: true,
         },
@@ -273,8 +273,7 @@ export class ProductsService {
             'Design moderno com costas cruzadas que garantem estabilidade durante o treino. Ideal para yoga, pilates e musculação.',
           categoryId: camisetasId,
           basePrice: 169.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=600&q=80',
+          coverImage: seedImages.products['top-cruzado'],
           isFeatured: true,
           isNew: true,
         },
@@ -286,8 +285,7 @@ export class ProductsService {
             'Combinação de top e legging em tonalidade premium. Acabamento impecável e conforto para usar do estúdio à rua.',
           categoryId: calcasId,
           basePrice: 459.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=600&q=80',
+          coverImage: seedImages.products['conjunto-aura'],
           isFeatured: true,
         },
         {
@@ -298,8 +296,7 @@ export class ProductsService {
             'Peça única versátil com modelagem alongada. Perfeita para treinos funcionais e looks casuais.',
           categoryId: calcasId,
           basePrice: 359.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1486218119243-13883505764c?w=600&q=80',
+          coverImage: seedImages.products['macacao-slim'],
           isNew: true,
         },
         {
@@ -310,8 +307,7 @@ export class ProductsService {
             'Short de performance com secagem rápida e cintura confortável. Pensado para corrida e cross training.',
           categoryId: calcasId,
           basePrice: 179.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=600&q=80',
+          coverImage: seedImages.products['short-performance'],
         },
         {
           name: 'Jaqueta Studio',
@@ -321,8 +317,7 @@ export class ProductsService {
             'Camada extra ideal para dias frios. Corte relaxed com acabamento premium e bolsos funcionais.',
           categoryId: moletonsId,
           basePrice: 316.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&q=80',
+          coverImage: seedImages.products['jaqueta-studio'],
           isFeatured: true,
         },
         {
@@ -333,8 +328,7 @@ export class ProductsService {
             'Silhueta flare contemporânea com elasticidade em quatro vias. Transita com elegância entre treino e casual.',
           categoryId: calcasId,
           basePrice: 299.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80',
+          coverImage: seedImages.products['calca-flare'],
         },
         {
           name: 'Top Longline',
@@ -344,8 +338,7 @@ export class ProductsService {
             'Modelagem alongada que oferece mais conforto e segurança. Tecido duplo na região frontal.',
           categoryId: camisetasId,
           basePrice: 199.9,
-          coverImage:
-            'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80',
+          coverImage: seedImages.products['top-longline'],
           isNew: true,
         },
       ],
