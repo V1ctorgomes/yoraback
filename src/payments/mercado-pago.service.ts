@@ -2,6 +2,7 @@ import { createHmac } from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { ORDER_PAYMENT_WINDOW_MS } from '../orders/order-payment.constants';
 import { MercadoPagoPaymentResponse } from './payment-status.mapper';
 
 export interface CreateMercadoPagoPaymentInput {
@@ -72,7 +73,7 @@ export class MercadoPagoService {
     if (input.paymentMethod === 'PIX') {
       body.payment_method_id = 'pix';
       body.date_of_expiration = new Date(
-        Date.now() + 30 * 60 * 1000,
+        Date.now() + ORDER_PAYMENT_WINDOW_MS,
       ).toISOString();
     } else {
       body.token = input.token;
@@ -146,7 +147,7 @@ export class MercadoPagoService {
         id,
         status: 'pending',
         transaction_amount: input.amount,
-        date_of_expiration: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        date_of_expiration: new Date(Date.now() + ORDER_PAYMENT_WINDOW_MS).toISOString(),
         point_of_interaction: {
           transaction_data: {
             qr_code: pixCode,

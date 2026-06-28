@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { CustomersService } from '../customer/customers.service';
+import { buildPaymentExpiresAt } from '../orders/order-payment.constants';
+import { OrderExpirationService } from '../orders/order-expiration.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import {
@@ -44,6 +46,7 @@ export class CheckoutService {
   constructor(
     private prisma: PrismaService,
     private customersService: CustomersService,
+    private orderExpiration: OrderExpirationService,
   ) {}
 
   async checkout(
@@ -116,6 +119,7 @@ export class CheckoutService {
           shippingPrice,
           discount,
           total,
+          paymentExpiresAt: buildPaymentExpiresAt(),
           items: {
             create: validatedItems.map((item) => ({
               productId: item.productId,
@@ -156,6 +160,8 @@ export class CheckoutService {
   }
 
   async getOrderByNumber(orderNumber: string) {
+    await this.orderExpiration.expireByOrderNumber(orderNumber);
+
     const order = await this.prisma.order.findUnique({
       where: { orderNumber },
       include: orderInclude,
@@ -277,6 +283,7 @@ export class CheckoutService {
       shippingPrice: Number(order.shippingPrice),
       discount: Number(order.discount),
       total: Number(order.total),
+      paymentExpiresAt: order.paymentExpiresAt.toISOString(),
       createdAt: order.createdAt.toISOString(),
       items: order.items.map((item) => ({
         productId: item.productId,

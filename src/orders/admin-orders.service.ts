@@ -7,6 +7,7 @@ import { OrderStatus, Prisma } from '@prisma/client';
 import { AuthAdmin } from '../auth/decorators/current-admin.decorator';
 import { SHIPPING_LABELS, ShippingMethod } from '../checkout/dto/shipping-method.enum';
 import { PrismaService } from '../prisma/prisma.service';
+import { OrderStockService } from './order-stock.service';
 import {
   AdminOrdersSort,
   QueryAdminOrdersDto,
@@ -31,7 +32,10 @@ const orderDetailInclude = {
 
 @Injectable()
 export class AdminOrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private orderStock: OrderStockService,
+  ) {}
 
   async getDashboard() {
     const [
@@ -273,6 +277,7 @@ export class AdminOrdersService {
       discount: Number(order.discount),
       total: Number(order.total),
       itemCount,
+      paymentExpiresAt: order.paymentExpiresAt.toISOString(),
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
       items: order.items.map((item) => ({
@@ -325,17 +330,8 @@ export class AdminOrdersService {
 
   private async prepareStockRestore(
     orderId: string,
-    _tx: Prisma.TransactionClient,
+    tx: Prisma.TransactionClient,
   ) {
-    // Ponto de extensão para reposição automática de estoque ao cancelar pedidos.
-    // Exemplo futuro:
-    // const items = await tx.orderItem.findMany({ where: { orderId } });
-    // for (const item of items) {
-    //   await tx.productVariant.update({
-    //     where: { id: item.productVariantId },
-    //     data: { stock: { increment: item.quantity } },
-    //   });
-    // }
-    void orderId;
+    await this.orderStock.restoreStock(orderId, tx);
   }
 }

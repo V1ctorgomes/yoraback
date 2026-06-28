@@ -13,6 +13,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { OrderExpirationService } from '../orders/order-expiration.service';
 import { canTransitionStatus } from '../orders/order-status.transitions';
 import { CreatePaymentDto, SimulatePaymentDto } from './dto/create-payment.dto';
 import { QueryAdminPaymentsDto } from './dto/query-admin-payments.dto';
@@ -43,6 +44,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private mercadoPago: MercadoPagoService,
+    private orderExpiration: OrderExpirationService,
   ) {}
 
   getPublicConfig() {
@@ -54,6 +56,8 @@ export class PaymentsService {
   }
 
   async createPayment(dto: CreatePaymentDto) {
+    await this.orderExpiration.expireByOrderNumber(dto.orderNumber);
+
     const order = await this.prisma.order.findUnique({
       where: { orderNumber: dto.orderNumber },
     });
@@ -65,6 +69,12 @@ export class PaymentsService {
     if (order.status !== OrderStatus.WAITING_PAYMENT) {
       throw new BadRequestException(
         'Este pedido não está aguardando pagamento',
+      );
+    }
+
+    if (!this.orderExpiration.isPaymentWindowOpen(order.paymentExpiresAt)) {
+      throw new BadRequestException(
+        'O prazo de pagamento deste pedido expirou',
       );
     }
 
@@ -167,13 +177,19 @@ export class PaymentsService {
   }
 
   async findLatestByOrderNumber(orderNumber: string) {
+    await this.orderExpiration.expireByOrderNumber(orderNumber);
+
     const order = await this.prisma.order.findUnique({
       where: { orderNumber },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
     if (!order) {
       throw new NotFoundException('Pedido não encontrado');
+    }
+
+    if (order.status !== OrderStatus.WAITING_PAYMENT) {
+      return null;
     }
 
     const payment = await this.prisma.payment.findFirst({
@@ -186,7 +202,27 @@ export class PaymentsService {
       return null;
     }
 
+    if (this.isRetryablePayment(payment)) {
+      return null;
+    }
+
     return this.findById(payment.id);
+  }
+
+  private isRetryablePayment(payment: PaymentWithOrder) {
+    if (payment.status === PaymentStatus.REJECTED) {
+      return true;
+    }
+
+    if (
+      payment.status === PaymentStatus.PENDING &&
+      payment.pixExpiresAt &&
+      payment.pixExpiresAt <= new Date()
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   async handleWebhook(
@@ -375,13 +411,14 @@ export class PaymentsService {
       paymentStatus === PaymentStatus.APPROVED &&
       order.status === OrderStatus.WAITING_PAYMENT
     ) {
+      if (!this.orderExpiration.isPaymentWindowOpen(order.paymentExpiresAt)) {
+        this.logger.warn(
+          `Pagamento aprovado após expiração ignorado para pedido ${order.orderNumber}`,
+        );
+        return;
+      }
+
       nextOrderStatus = OrderStatus.PAID;
-    } else if (
-      (paymentStatus === PaymentStatus.REJECTED ||
-        paymentStatus === PaymentStatus.CANCELLED) &&
-      order.status === OrderStatus.WAITING_PAYMENT
-    ) {
-      nextOrderStatus = OrderStatus.CANCELLED;
     } else if (
       paymentStatus === PaymentStatus.REFUNDED &&
       order.status === OrderStatus.PAID
