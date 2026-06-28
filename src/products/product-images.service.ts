@@ -77,32 +77,33 @@ export class ProductImagesService {
       select: { id: true, slug: true, name: true, coverImage: true },
     });
 
-    const galleryRows: Prisma.ProductImageCreateManyInput[] = products.flatMap(
-      (product) => {
-        const config =
-          seedImages.products[product.slug as keyof typeof seedImages.products];
+    const galleryRows: Prisma.ProductImageCreateManyInput[] = [];
 
-        if (config) {
-          return config.gallery.map((image) => ({
+    for (const product of products) {
+      const config =
+        seedImages.products[product.slug as keyof typeof seedImages.products];
+
+      if (config) {
+        for (const image of config.gallery) {
+          galleryRows.push({
             productId: product.id,
             imageUrl: image.imageUrl,
             altText: product.name,
             color: image.color,
             displayOrder: image.displayOrder,
-          }));
+          });
         }
+        continue;
+      }
 
-        return [
-          {
-            productId: product.id,
-            imageUrl: product.coverImage,
-            altText: product.name,
-            color: null,
-            displayOrder: 0,
-          },
-        ];
-      },
-    );
+      galleryRows.push({
+        productId: product.id,
+        imageUrl: product.coverImage,
+        altText: product.name,
+        color: null,
+        displayOrder: 0,
+      });
+    }
 
     if (galleryRows.length > 0) {
       await this.prisma.productImage.createMany({ data: galleryRows });
