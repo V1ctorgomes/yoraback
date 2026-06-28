@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { seedImages } from '../common/seed-images';
 import { CreateProductVariantDto } from './dto/create-product-variant.dto';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto';
 
@@ -124,9 +125,14 @@ export class ProductVariantsService {
       select: { id: true, slug: true },
     });
 
-    const colors = ['Preto', 'Branco'];
+    const colors = [...seedImages.variantColors];
     const sizes = ['P', 'M', 'G'];
     const stockBySize: Record<string, number> = { P: 12, M: 20, G: 8 };
+    const colorCodes: Record<string, string> = {
+      Preto: 'PRE',
+      Branco: 'BRA',
+      Bege: 'BEI',
+    };
 
     for (const product of products) {
       const skuPrefix = product.slug
@@ -135,17 +141,14 @@ export class ProductVariantsService {
         .join('-');
 
       const variants = colors.flatMap((color) =>
-        sizes.map((size) => {
-          const colorCode = color === 'Preto' ? 'PRE' : 'BRA';
-          return {
-            productId: product.id,
-            sku: `${skuPrefix}-${colorCode}-${size}`,
-            color,
-            size,
-            stock: stockBySize[size] ?? 10,
-            isActive: true,
-          };
-        }),
+        sizes.map((size) => ({
+          productId: product.id,
+          sku: `${skuPrefix}-${colorCodes[color]}-${size}`,
+          color,
+          size,
+          stock: stockBySize[size] ?? 10,
+          isActive: true,
+        })),
       );
 
       await this.prisma.productVariant.createMany({ data: variants });

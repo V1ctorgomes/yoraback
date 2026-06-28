@@ -3,6 +3,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { seedImages } from '../common/seed-images';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
 import { UpdateProductImageDto } from './dto/update-product-image.dto';
 
@@ -72,17 +73,37 @@ export class ProductImagesService {
     }
 
     const products = await this.prisma.product.findMany({
-      select: { id: true, coverImage: true, name: true },
+      select: { id: true, slug: true, name: true, coverImage: true },
     });
 
-    await this.prisma.productImage.createMany({
-      data: products.map((product) => ({
-        productId: product.id,
-        imageUrl: product.coverImage,
-        altText: product.name,
-        displayOrder: 0,
-      })),
+    const galleryRows = products.flatMap((product) => {
+      const config =
+        seedImages.products[product.slug as keyof typeof seedImages.products];
+
+      if (config) {
+        return config.gallery.map((image) => ({
+          productId: product.id,
+          imageUrl: image.imageUrl,
+          altText: product.name,
+          color: image.color,
+          displayOrder: image.displayOrder,
+        }));
+      }
+
+      return [
+        {
+          productId: product.id,
+          imageUrl: product.coverImage,
+          altText: product.name,
+          color: null,
+          displayOrder: 0,
+        },
+      ];
     });
+
+    if (galleryRows.length > 0) {
+      await this.prisma.productImage.createMany({ data: galleryRows });
+    }
   }
 
   private async ensureProductExists(productId: string) {

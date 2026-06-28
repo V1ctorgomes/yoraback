@@ -27,7 +27,8 @@ async function main() {
           title: 'Summer Drop',
           subtitle:
             'Peças leves para treinar, viver e brilhar — edição limitada.',
-          imageUrl: seedImages.banners.summerDrop,
+          imageUrl: seedImages.banners.summerDrop.desktop,
+          mobileImageUrl: seedImages.banners.summerDrop.mobile,
           buttonText: 'Explorar coleção',
           buttonLink: '/colecoes/summer-drop',
           displayOrder: 0,
@@ -36,7 +37,8 @@ async function main() {
         {
           title: 'Essentials',
           subtitle: 'Os favoritos de quem entende de estilo e conforto.',
-          imageUrl: seedImages.banners.essentials,
+          imageUrl: seedImages.banners.essentials.desktop,
+          mobileImageUrl: seedImages.banners.essentials.mobile,
           buttonText: 'Ver best sellers',
           buttonLink: '/colecoes/essentials',
           displayOrder: 1,
