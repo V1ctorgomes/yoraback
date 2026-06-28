@@ -30,6 +30,13 @@ const orderDetailInclude = {
   },
 } satisfies Prisma.OrderInclude;
 
+const SOLD_ORDER_STATUSES: OrderStatus[] = [
+  OrderStatus.PAID,
+  OrderStatus.PROCESSING,
+  OrderStatus.SHIPPED,
+  OrderStatus.DELIVERED,
+];
+
 @Injectable()
 export class AdminOrdersService {
   constructor(
@@ -44,7 +51,8 @@ export class AdminOrdersService {
       shipped,
       delivered,
       cancelled,
-      totals,
+      soldTotals,
+      totalOrders,
     ] = await Promise.all([
       this.prisma.order.count({
         where: { status: OrderStatus.WAITING_PAYMENT },
@@ -54,15 +62,17 @@ export class AdminOrdersService {
       this.prisma.order.count({ where: { status: OrderStatus.DELIVERED } }),
       this.prisma.order.count({ where: { status: OrderStatus.CANCELLED } }),
       this.prisma.order.aggregate({
+        where: { status: { in: SOLD_ORDER_STATUSES } },
         _count: { _all: true },
         _sum: { total: true },
       }),
+      this.prisma.order.count(),
     ]);
 
-    const totalOrders = totals._count._all;
-    const totalRevenue = Number(totals._sum.total ?? 0);
+    const soldOrders = soldTotals._count._all;
+    const totalRevenue = Number(soldTotals._sum.total ?? 0);
     const averageTicket =
-      totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      soldOrders > 0 ? totalRevenue / soldOrders : 0;
 
     return {
       counts: {
@@ -74,6 +84,7 @@ export class AdminOrdersService {
       },
       summary: {
         totalOrders,
+        soldOrders,
         totalRevenue,
         averageTicket,
       },
