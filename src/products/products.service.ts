@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -32,6 +33,8 @@ const publicListSelect = {
   coverImage: true,
   isFeatured: true,
   isNew: true,
+  isOnSale: true,
+  compareAtPrice: true,
   category: { select: categorySelect },
   variants: {
     where: { isActive: true },
@@ -80,6 +83,7 @@ export class ProductsService {
       isActive: true,
       ...(query.featured !== undefined && { isFeatured: query.featured }),
       ...(query.isNew !== undefined && { isNew: query.isNew }),
+      ...(query.isOnSale !== undefined && { isOnSale: query.isOnSale }),
       ...(query.category && {
         category: { slug: query.category, isActive: true },
       }),
@@ -142,6 +146,11 @@ export class ProductsService {
     }
 
     const slug = await this.resolveSlug(dto.slug ?? slugify(dto.name), dto.name);
+    this.validateSaleFields({
+      isOnSale: dto.isOnSale,
+      compareAtPrice: dto.compareAtPrice,
+      basePrice: dto.basePrice,
+    });
 
     const product = await this.prisma.product.create({
       data: {
@@ -152,9 +161,11 @@ export class ProductsService {
         categoryId: dto.categoryId,
         collectionId: dto.collectionId ?? null,
         basePrice: dto.basePrice,
+        compareAtPrice: dto.compareAtPrice ?? null,
         coverImage: dto.coverImage.trim(),
         isFeatured: dto.isFeatured ?? false,
         isNew: dto.isNew ?? false,
+        isOnSale: dto.isOnSale ?? false,
         isActive: dto.isActive ?? true,
         seoTitle: dto.seoTitle?.trim() || null,
         seoDescription: dto.seoDescription?.trim() || null,
@@ -188,6 +199,25 @@ export class ProductsService {
       );
     }
 
+    const nextIsOnSale =
+      dto.isOnSale !== undefined ? dto.isOnSale : Boolean(current.isOnSale);
+    const nextBasePrice =
+      dto.basePrice !== undefined
+        ? dto.basePrice
+        : Number(current.basePrice);
+    const nextCompareAtPrice =
+      dto.compareAtPrice !== undefined
+        ? dto.compareAtPrice
+        : current.compareAtPrice !== null
+          ? Number(current.compareAtPrice)
+          : null;
+
+    this.validateSaleFields({
+      isOnSale: nextIsOnSale,
+      compareAtPrice: nextCompareAtPrice,
+      basePrice: nextBasePrice,
+    });
+
     const product = await this.prisma.product.update({
       where: { id },
       data: {
@@ -204,11 +234,15 @@ export class ProductsService {
           collectionId: dto.collectionId,
         }),
         ...(dto.basePrice !== undefined && { basePrice: dto.basePrice }),
+        ...(dto.compareAtPrice !== undefined && {
+          compareAtPrice: dto.compareAtPrice,
+        }),
         ...(dto.coverImage !== undefined && {
           coverImage: dto.coverImage.trim(),
         }),
         ...(dto.isFeatured !== undefined && { isFeatured: dto.isFeatured }),
         ...(dto.isNew !== undefined && { isNew: dto.isNew }),
+        ...(dto.isOnSale !== undefined && { isOnSale: dto.isOnSale }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         ...(dto.seoTitle !== undefined && {
           seoTitle: dto.seoTitle?.trim() || null,
@@ -263,10 +297,12 @@ export class ProductsService {
           description:
             'A Legging Flow foi desenvolvida para treinos intensos e uso diário. Tecido respirável, toque macio e modelagem que valoriza o corpo em movimento.',
           categoryId: calcasId,
-          basePrice: 289.9,
+          basePrice: 231.92,
+          compareAtPrice: 289.9,
           coverImage: seedImages.products['legging-flow'].coverImage,
           isFeatured: true,
           isNew: true,
+          isOnSale: true,
         },
         {
           name: 'Top Cruzado',
@@ -298,8 +334,10 @@ export class ProductsService {
           description:
             'Peça única versátil com modelagem alongada. Perfeita para treinos funcionais e looks casuais.',
           categoryId: calcasId,
-          basePrice: 359.9,
+          basePrice: 287.92,
+          compareAtPrice: 359.9,
           coverImage: seedImages.products['macacao-slim'].coverImage,
+          isOnSale: true,
           isNew: true,
         },
         {
@@ -309,8 +347,10 @@ export class ProductsService {
           description:
             'Short de performance com secagem rápida e cintura confortável. Pensado para corrida e cross training.',
           categoryId: calcasId,
-          basePrice: 179.9,
+          basePrice: 143.92,
+          compareAtPrice: 179.9,
           coverImage: seedImages.products['short-performance'].coverImage,
+          isOnSale: true,
         },
         {
           name: 'Jaqueta Studio',
@@ -348,6 +388,45 @@ export class ProductsService {
     });
   }
 
+  async seedSaleDefaults() {
+    const onSaleCount = await this.prisma.product.count({
+      where: { isOnSale: true },
+    });
+
+    if (onSaleCount > 0) {
+      return;
+    }
+
+    const saleProducts = [
+      {
+        slug: 'legging-flow',
+        basePrice: 231.92,
+        compareAtPrice: 289.9,
+      },
+      {
+        slug: 'macacao-slim',
+        basePrice: 287.92,
+        compareAtPrice: 359.9,
+      },
+      {
+        slug: 'short-performance',
+        basePrice: 143.92,
+        compareAtPrice: 179.9,
+      },
+    ] as const;
+
+    for (const item of saleProducts) {
+      await this.prisma.product.updateMany({
+        where: { slug: item.slug },
+        data: {
+          isOnSale: true,
+          basePrice: item.basePrice,
+          compareAtPrice: item.compareAtPrice,
+        },
+      });
+    }
+  }
+
   private serializeProduct<T extends ProductRecord>(product: T) {
     const record = product as T & {
       variants?: { color: string }[];
@@ -366,8 +445,29 @@ export class ProductsService {
     return {
       ...rest,
       basePrice: Number(product.basePrice),
+      compareAtPrice:
+        product.compareAtPrice !== null && product.compareAtPrice !== undefined
+          ? Number(product.compareAtPrice)
+          : null,
       ...(colors?.length ? { colors } : {}),
     };
+  }
+
+  private validateSaleFields(input: {
+    isOnSale?: boolean;
+    compareAtPrice?: number | null;
+    basePrice: number;
+  }) {
+    if (
+      input.isOnSale &&
+      input.compareAtPrice !== null &&
+      input.compareAtPrice !== undefined &&
+      input.compareAtPrice <= input.basePrice
+    ) {
+      throw new BadRequestException(
+        'O preço original deve ser maior que o preço promocional',
+      );
+    }
   }
 
   private async ensureCategoryExists(categoryId: string) {

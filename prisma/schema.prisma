@@ -114,6 +114,8 @@ model Product {
   coverImage       String           @map("cover_image")
   isFeatured       Boolean          @default(false) @map("is_featured")
   isNew            Boolean          @default(false) @map("is_new")
+  isOnSale         Boolean          @default(false) @map("is_on_sale")
+  compareAtPrice   Decimal?         @map("compare_at_price") @db.Decimal(10, 2)
   isActive         Boolean          @default(true) @map("is_active")
   seoTitle         String?          @map("seo_title")
   seoDescription   String?          @map("seo_description")

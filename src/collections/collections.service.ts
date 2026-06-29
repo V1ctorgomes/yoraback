@@ -27,6 +27,8 @@ const productListSelect = {
   coverImage: true,
   isFeatured: true,
   isNew: true,
+  isOnSale: true,
+  compareAtPrice: true,
   category: { select: categorySelect },
 } as const;
 

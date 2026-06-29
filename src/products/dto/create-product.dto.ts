@@ -10,6 +10,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -57,6 +58,16 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isNew?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnSale?: boolean;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01, { message: 'compareAtPrice deve ser maior que zero' })
+  compareAtPrice?: number | null;
 
   @IsOptional()
   @IsBoolean()

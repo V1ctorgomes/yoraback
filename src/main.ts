@@ -44,6 +44,7 @@ async function bootstrap() {
 
   const productsService = app.get(ProductsService);
   await productsService.seedDefaults();
+  await productsService.seedSaleDefaults();
 
   const productVariantsService = app.get(ProductVariantsService);
   await productVariantsService.seedDefaults();

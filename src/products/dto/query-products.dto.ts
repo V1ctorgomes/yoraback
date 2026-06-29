@@ -13,6 +13,11 @@ export class QueryProductsDto {
   isNew?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  isOnSale?: boolean;
+
+  @IsOptional()
   @IsString()
   category?: string;
 }

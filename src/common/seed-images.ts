@@ -44,6 +44,9 @@ export const seedImages = {
       mobile: unsplash(p.stretching, 1080),
     },
   },
+  sale: {
+    banner: unsplash(p.pinkSporty, 1600),
+  },
   categories: {
     camisetas: {
       imageUrl: unsplash(p.gymBarbell, 800),
