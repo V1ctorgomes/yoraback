@@ -85,48 +85,48 @@ export const seedImages = {
       coverImage: unsplash(p.yellowLeggings, 800),
       gallery: [
         { imageUrl: unsplash(p.yellowLeggings, 800), color: 'Bege', displayOrder: 0 },
-        { imageUrl: unsplash(p.fitnessStudio, 800), color: 'Bege', displayOrder: 1 },
-        { imageUrl: unsplash(p.blackPinkSet, 800), color: 'Preto', displayOrder: 2 },
+        { imageUrl: unsplash(p.blackPinkSet, 800), color: 'Preto', displayOrder: 1 },
+        { imageUrl: unsplash(p.pinkSporty, 800), color: 'Branco', displayOrder: 2 },
       ],
     },
     'top-cruzado': {
       coverImage: unsplash(p.blackPinkSet, 800),
       gallery: [
         { imageUrl: unsplash(p.blackPinkSet, 800), color: 'Preto', displayOrder: 0 },
-        { imageUrl: unsplash(p.gymBarbell, 800), color: 'Preto', displayOrder: 1 },
-        { imageUrl: unsplash(p.pinkSporty, 800), color: 'Branco', displayOrder: 2 },
+        { imageUrl: unsplash(p.pinkSporty, 800), color: 'Branco', displayOrder: 1 },
+        { imageUrl: unsplash(p.yellowLeggings, 800), color: 'Bege', displayOrder: 2 },
       ],
     },
     'conjunto-aura': {
       coverImage: unsplash(p.streetActivewear, 800),
       gallery: [
         { imageUrl: unsplash(p.streetActivewear, 800), color: 'Bege', displayOrder: 0 },
-        { imageUrl: unsplash(p.activewearStudio, 800), color: 'Bege', displayOrder: 1 },
-        { imageUrl: unsplash(p.yellowLeggings, 800), color: 'Bege', displayOrder: 2 },
+        { imageUrl: unsplash(p.blackPinkSet, 800), color: 'Preto', displayOrder: 1 },
+        { imageUrl: unsplash(p.greyHoodie, 800), color: 'Branco', displayOrder: 2 },
       ],
     },
     'macacao-slim': {
       coverImage: unsplash(p.activewearStudio, 800),
       gallery: [
         { imageUrl: unsplash(p.activewearStudio, 800), color: 'Preto', displayOrder: 0 },
-        { imageUrl: unsplash(p.gymTraining, 800), color: 'Preto', displayOrder: 1 },
-        { imageUrl: unsplash(p.yogaPose, 800), color: 'Branco', displayOrder: 2 },
+        { imageUrl: unsplash(p.yogaPose, 800), color: 'Branco', displayOrder: 1 },
+        { imageUrl: unsplash(p.yellowLeggings, 800), color: 'Bege', displayOrder: 2 },
       ],
     },
     'short-performance': {
       coverImage: unsplash(p.fitnessJump, 800),
       gallery: [
         { imageUrl: unsplash(p.fitnessJump, 800), color: 'Preto', displayOrder: 0 },
-        { imageUrl: unsplash(p.gymWoman, 800), color: 'Preto', displayOrder: 1 },
-        { imageUrl: unsplash(p.activeLifestyle, 800), color: 'Branco', displayOrder: 2 },
+        { imageUrl: unsplash(p.activeLifestyle, 800), color: 'Branco', displayOrder: 1 },
+        { imageUrl: unsplash(p.stretching, 800), color: 'Bege', displayOrder: 2 },
       ],
     },
     'jaqueta-studio': {
       coverImage: unsplash(p.greyHoodie, 800),
       gallery: [
         { imageUrl: unsplash(p.greyHoodie, 800), color: 'Branco', displayOrder: 0 },
-        { imageUrl: unsplash(p.fitnessStudio, 800), color: 'Branco', displayOrder: 1 },
-        { imageUrl: unsplash(p.gymTraining, 800), color: 'Preto', displayOrder: 2 },
+        { imageUrl: unsplash(p.gymTraining, 800), color: 'Preto', displayOrder: 1 },
+        { imageUrl: unsplash(p.fitnessStudio, 800), color: 'Bege', displayOrder: 2 },
       ],
     },
     'calca-flare': {
@@ -134,15 +134,15 @@ export const seedImages = {
       gallery: [
         { imageUrl: unsplash(p.pinkSporty, 800), color: 'Branco', displayOrder: 0 },
         { imageUrl: unsplash(p.yellowLeggings, 800), color: 'Bege', displayOrder: 1 },
-        { imageUrl: unsplash(p.stretching, 800), color: 'Bege', displayOrder: 2 },
+        { imageUrl: unsplash(p.blackPinkSet, 800), color: 'Preto', displayOrder: 2 },
       ],
     },
     'top-longline': {
       coverImage: unsplash(p.gymBarbell, 800),
       gallery: [
         { imageUrl: unsplash(p.gymBarbell, 800), color: 'Preto', displayOrder: 0 },
-        { imageUrl: unsplash(p.gymWoman, 800), color: 'Preto', displayOrder: 1 },
-        { imageUrl: unsplash(p.streetActivewear, 800), color: 'Bege', displayOrder: 2 },
+        { imageUrl: unsplash(p.streetActivewear, 800), color: 'Bege', displayOrder: 1 },
+        { imageUrl: unsplash(p.pinkSporty, 800), color: 'Branco', displayOrder: 2 },
       ],
     },
   } satisfies Record<string, SeedProductConfig>,

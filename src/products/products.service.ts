@@ -33,9 +33,12 @@ const publicListSelect = {
   isFeatured: true,
   isNew: true,
   category: { select: categorySelect },
+  variants: {
+    where: { isActive: true },
+    select: { color: true },
+  },
   images: {
     orderBy: { displayOrder: 'asc' as const },
-    take: 3,
     select: {
       id: true,
       imageUrl: true,
@@ -346,9 +349,24 @@ export class ProductsService {
   }
 
   private serializeProduct<T extends ProductRecord>(product: T) {
+    const record = product as T & {
+      variants?: { color: string }[];
+    };
+
+    const colors = record.variants?.length
+      ? [
+          ...new Set(
+            record.variants.map((variant) => variant.color).filter(Boolean),
+          ),
+        ]
+      : undefined;
+
+    const { variants: _variants, ...rest } = record;
+
     return {
-      ...product,
+      ...rest,
       basePrice: Number(product.basePrice),
+      ...(colors?.length ? { colors } : {}),
     };
   }
 
