@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   DEFAULT_LOW_STOCK_THRESHOLD,
-} from '../analytics.constants';
+} from './analytics.constants';
 
 @Injectable()
 export class InventoryAnalyticsService {

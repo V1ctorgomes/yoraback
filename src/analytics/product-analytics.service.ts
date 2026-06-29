@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { REVENUE_ORDER_STATUSES } from '../analytics.constants';
-import { AnalyticsDateRange } from '../analytics-period.util';
+import { REVENUE_ORDER_STATUSES } from './analytics.constants';
+import { AnalyticsDateRange } from './analytics-period.util';
 
 @Injectable()
 export class ProductAnalyticsService {

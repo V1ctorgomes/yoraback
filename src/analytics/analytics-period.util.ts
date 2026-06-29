@@ -32,9 +32,9 @@ export function resolveAnalyticsPeriod(input: {
   dateTo?: string;
 }): AnalyticsDateRange {
   const now = new Date();
-  const preset = input.period ?? '30d';
+  const preset = input.period ?? AnalyticsPeriodPreset.THIRTY_DAYS;
 
-  if (preset === 'custom') {
+  if (preset === AnalyticsPeriodPreset.CUSTOM) {
     if (!input.dateFrom || !input.dateTo) {
       throw new BadRequestException(
         'Informe dateFrom e dateTo para o período personalizado',
@@ -65,13 +65,13 @@ export function resolveAnalyticsPeriod(input: {
   }
 
   switch (preset) {
-    case 'today':
+    case AnalyticsPeriodPreset.TODAY:
       return {
         preset,
         from: startOfDay(now),
         to: endOfDay(now),
       };
-    case 'yesterday': {
+    case AnalyticsPeriodPreset.YESTERDAY: {
       const yesterday = daysAgo(1, now);
       return {
         preset,
@@ -79,32 +79,34 @@ export function resolveAnalyticsPeriod(input: {
         to: endOfDay(yesterday),
       };
     }
-    case '7d':
+    case AnalyticsPeriodPreset.SEVEN_DAYS:
       return {
         preset,
         from: startOfDay(daysAgo(6, now)),
         to: endOfDay(now),
       };
-    case '30d':
+    case AnalyticsPeriodPreset.THIRTY_DAYS:
       return {
         preset,
         from: startOfDay(daysAgo(29, now)),
         to: endOfDay(now),
       };
-    case '90d':
+    case AnalyticsPeriodPreset.NINETY_DAYS:
       return {
         preset,
         from: startOfDay(daysAgo(89, now)),
         to: endOfDay(now),
       };
-    case 'year':
+    case AnalyticsPeriodPreset.YEAR:
       return {
         preset,
         from: startOfDay(new Date(now.getFullYear(), 0, 1)),
         to: endOfDay(now),
       };
     default:
-      return resolveAnalyticsPeriod({ period: '30d' });
+      return resolveAnalyticsPeriod({
+        period: AnalyticsPeriodPreset.THIRTY_DAYS,
+      });
   }
 }
 
