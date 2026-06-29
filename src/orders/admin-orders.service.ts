@@ -28,6 +28,9 @@ const orderDetailInclude = {
   statusHistory: {
     orderBy: { createdAt: 'desc' as const },
   },
+  shippingEvents: {
+    orderBy: { eventDate: 'desc' as const },
+  },
 } satisfies Prisma.OrderInclude;
 
 @Injectable()
@@ -250,6 +253,9 @@ export class AdminOrdersService {
       shippingService: order.shippingService,
       shippingDeadlineDays: order.shippingDeadlineDays,
       trackingCode: order.trackingCode,
+      shippingLabelId: order.shippingLabelId,
+      shippingLabelUrl: order.shippingLabelUrl,
+      logisticStatus: order.logisticStatus,
       subtotal: Number(order.subtotal),
       shippingPrice: Number(order.shippingPrice),
       discount: Number(order.discount),
@@ -291,6 +297,14 @@ export class AdminOrdersService {
         newStatus: entry.newStatus,
         adminEmail: entry.adminEmail,
         createdAt: entry.createdAt.toISOString(),
+      })),
+      shippingEvents: order.shippingEvents.map((event) => ({
+        id: event.id,
+        provider: event.provider,
+        status: event.status,
+        description: event.description,
+        location: event.location,
+        eventDate: event.eventDate.toISOString(),
       })),
     };
   }

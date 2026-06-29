@@ -11,6 +11,11 @@ export class ShippingController {
     return this.shippingService.calculate(dto);
   }
 
+  @Post('quote')
+  quote(@Body() dto: CalculateShippingDto) {
+    return this.shippingService.calculate(dto);
+  }
+
   @Get('providers')
   getProviders() {
     return this.shippingService.getProviders();

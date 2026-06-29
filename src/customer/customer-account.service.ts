@@ -24,6 +24,9 @@ const orderListInclude = {
 const orderDetailInclude = {
   items: true,
   address: true,
+  shippingEvents: {
+    orderBy: { eventDate: 'desc' as const },
+  },
 } satisfies Prisma.OrderInclude;
 
 @Injectable()
@@ -398,6 +401,17 @@ export class CustomerAccountService {
       shippingService: order.shippingService,
       shippingDeadlineDays: order.shippingDeadlineDays,
       trackingCode: order.trackingCode,
+      logisticStatus: order.logisticStatus,
+      shippingLabelUrl: order.shippingLabelUrl,
+      trackingUrl: order.trackingCode
+        ? `https://rastreamento.correios.com.br/app/index.php?objeto=${order.trackingCode}`
+        : null,
+      shippingEvents: order.shippingEvents.map((event) => ({
+        status: event.status,
+        description: event.description,
+        location: event.location,
+        eventDate: event.eventDate.toISOString(),
+      })),
       subtotal: Number(order.subtotal),
       shippingPrice: Number(order.shippingPrice),
       discount: Number(order.discount),

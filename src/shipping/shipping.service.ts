@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CalculateShippingDto } from './dto/calculate-shipping.dto';
 import { UpdateShippingMethodDto } from './dto/update-shipping-method.dto';
 import { CorreiosProvider } from './providers/correios.provider';
+import { MelhorEnvioProvider } from './providers/melhor-envio.provider';
 import { RetiradaLojaProvider } from './providers/retirada-loja.provider';
 import { ShippingProvider } from './providers/shipping-provider.interface';
 import {
@@ -25,9 +26,14 @@ export class ShippingService {
   constructor(
     private prisma: PrismaService,
     correiosProvider: CorreiosProvider,
+    melhorEnvioProvider: MelhorEnvioProvider,
     retiradaLojaProvider: RetiradaLojaProvider,
   ) {
-    this.providers = [correiosProvider, retiradaLojaProvider];
+    this.providers = [
+      melhorEnvioProvider,
+      correiosProvider,
+      retiradaLojaProvider,
+    ];
   }
 
   async calculate(dto: CalculateShippingDto): Promise<ShippingQuote[]> {

@@ -155,6 +155,10 @@ model ProductVariant {
   priceOverride Decimal?   @map("price_override") @db.Decimal(10, 2)
   stock         Int        @default(0)
   isActive      Boolean    @default(true) @map("is_active")
+  weightKg      Decimal?   @map("weight_kg") @db.Decimal(6, 3)
+  lengthCm      Decimal?   @map("length_cm") @db.Decimal(6, 2)
+  widthCm       Decimal?   @map("width_cm") @db.Decimal(6, 2)
+  heightCm      Decimal?   @map("height_cm") @db.Decimal(6, 2)
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
   cartItems     CartItem[]
@@ -197,6 +201,24 @@ model CartItem {
 
   @@unique([cartId, productVariantId])
   @@map("cart_items")
+}
+
+enum LogisticStatus {
+  PENDING
+  LABEL_PENDING
+  LABEL_CREATED
+  POSTED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+  CANCELLED
+}
+
+enum MelhorEnvioEnvironment {
+  SANDBOX
+  PRODUCTION
 }
 
 enum OrderStatus {
@@ -242,6 +264,9 @@ model Order {
   shippingPrice        Decimal         @map("shipping_price") @db.Decimal(10, 2)
   shippingDeadlineDays Int?            @map("shipping_deadline_days")
   trackingCode         String?         @map("tracking_code")
+  shippingLabelId      String?         @map("shipping_label_id")
+  shippingLabelUrl     String?         @map("shipping_label_url")
+  logisticStatus       LogisticStatus? @map("logistic_status")
   subtotal             Decimal         @db.Decimal(10, 2)
   discount             Decimal         @default(0) @db.Decimal(10, 2)
   total                Decimal         @db.Decimal(10, 2)
@@ -257,6 +282,7 @@ model Order {
   promotion            Promotion?        @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   promotionCode        String?           @map("promotion_code")
   promotionUsages      PromotionUsage[]
+  shippingEvents       ShippingEvent[]
 
   @@index([status, createdAt])
   @@index([createdAt])
@@ -488,4 +514,82 @@ model DashboardAccessLog {
 
   @@index([accessedAt])
   @@map("dashboard_access_logs")
+}
+
+model MelhorEnvioConfig {
+  id                    String                 @id @default("default")
+  clientId              String?                @map("client_id")
+  clientSecretEncrypted String?                @map("client_secret_encrypted")
+  accessTokenEncrypted  String?                @map("access_token_encrypted")
+  refreshTokenEncrypted String?                @map("refresh_token_encrypted")
+  tokenExpiresAt        DateTime?              @map("token_expires_at")
+  environment           MelhorEnvioEnvironment @default(SANDBOX)
+  isConnected           Boolean                @default(false) @map("is_connected")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  @@map("melhor_envio_configs")
+}
+
+model ShippingSender {
+  id         String   @id @default(uuid())
+  name       String
+  company    String?
+  document   String
+  phone      String
+  zipCode    String   @map("zip_code")
+  address    String
+  number     String
+  complement String?
+  district   String
+  city       String
+  state      String
+  isDefault  Boolean  @default(false) @map("is_default")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("shipping_senders")
+}
+
+model ShippingPackage {
+  id              String   @id @default(uuid())
+  name            String
+  lengthCm        Decimal  @map("length_cm") @db.Decimal(6, 2)
+  widthCm         Decimal  @map("width_cm") @db.Decimal(6, 2)
+  heightCm        Decimal  @map("height_cm") @db.Decimal(6, 2)
+  maxWeightKg     Decimal  @map("max_weight_kg") @db.Decimal(6, 3)
+  packageWeightKg Decimal  @map("package_weight_kg") @db.Decimal(6, 3)
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("shipping_packages")
+}
+
+model ShippingEvent {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider    String
+  status      String
+  description String
+  location    String?
+  eventDate   DateTime @map("event_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, eventDate])
+  @@map("shipping_events")
+}
+
+model ShippingWebhookEvent {
+  id          String    @id @default(uuid())
+  provider    String
+  externalId  String?   @map("external_id")
+  payload     Json
+  processedAt DateTime? @map("processed_at")
+  error       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([provider, createdAt])
+  @@map("shipping_webhook_events")
 }

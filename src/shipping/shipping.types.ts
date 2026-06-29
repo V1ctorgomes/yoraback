@@ -1,5 +1,6 @@
 export const SHIPPING_PROVIDERS = {
   CORREIOS: 'Correios',
+  MELHOR_ENVIO: 'MelhorEnvio',
   RETIRADA_LOJA: 'RetiradaLoja',
 } as const;
 
@@ -18,6 +19,7 @@ export interface ShippingQuote {
   serviceCode: string;
   price: number;
   deadline: number;
+  externalServiceId?: number;
 }
 
 export interface ShippingMethodRecord {
