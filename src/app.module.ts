@@ -15,6 +15,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { PromotionsModule } from './promotions/promotions.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { PromotionsModule } from './promotions/promotions.module';
     ProductsModule,
     ShippingModule,
     PromotionsModule,
+    AnalyticsModule,
     HealthModule,
   ],
 })

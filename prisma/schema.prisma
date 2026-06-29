@@ -258,6 +258,9 @@ model Order {
   promotionCode        String?           @map("promotion_code")
   promotionUsages      PromotionUsage[]
 
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([customerId])
   @@map("orders")
 }
 
@@ -468,4 +471,21 @@ model PromotionUsage {
   @@index([customerId])
   @@index([orderId])
   @@map("promotion_usages")
+}
+
+model StoreSetting {
+  id                String   @id @default("default")
+  lowStockThreshold Int      @default(5) @map("low_stock_threshold")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
+}
+
+model DashboardAccessLog {
+  id         String   @id @default(uuid())
+  adminEmail String   @map("admin_email")
+  accessedAt DateTime @default(now()) @map("accessed_at")
+
+  @@index([accessedAt])
+  @@map("dashboard_access_logs")
 }

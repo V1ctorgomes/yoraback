@@ -20,11 +20,6 @@ import { UpdateOrderTrackingDto } from './dto/update-order-tracking.dto';
 export class AdminOrdersController {
   constructor(private adminOrdersService: AdminOrdersService) {}
 
-  @Get('dashboard')
-  getDashboard() {
-    return this.adminOrdersService.getDashboard();
-  }
-
   @Get()
   findAll(@Query() query: QueryAdminOrdersDto) {
     return this.adminOrdersService.findAll(query);

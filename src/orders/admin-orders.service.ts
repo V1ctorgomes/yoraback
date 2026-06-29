@@ -30,66 +30,12 @@ const orderDetailInclude = {
   },
 } satisfies Prisma.OrderInclude;
 
-const SOLD_ORDER_STATUSES: OrderStatus[] = [
-  OrderStatus.PAID,
-  OrderStatus.PROCESSING,
-  OrderStatus.SHIPPED,
-  OrderStatus.DELIVERED,
-];
-
 @Injectable()
 export class AdminOrdersService {
   constructor(
     private prisma: PrismaService,
     private orderStock: OrderStockService,
   ) {}
-
-  async getDashboard() {
-    const [
-      waitingPayment,
-      processing,
-      shipped,
-      delivered,
-      cancelled,
-      soldTotals,
-      totalOrders,
-    ] = await Promise.all([
-      this.prisma.order.count({
-        where: { status: OrderStatus.WAITING_PAYMENT },
-      }),
-      this.prisma.order.count({ where: { status: OrderStatus.PROCESSING } }),
-      this.prisma.order.count({ where: { status: OrderStatus.SHIPPED } }),
-      this.prisma.order.count({ where: { status: OrderStatus.DELIVERED } }),
-      this.prisma.order.count({ where: { status: OrderStatus.CANCELLED } }),
-      this.prisma.order.aggregate({
-        where: { status: { in: SOLD_ORDER_STATUSES } },
-        _count: { _all: true },
-        _sum: { total: true },
-      }),
-      this.prisma.order.count(),
-    ]);
-
-    const soldOrders = soldTotals._count._all;
-    const totalRevenue = Number(soldTotals._sum.total ?? 0);
-    const averageTicket =
-      soldOrders > 0 ? totalRevenue / soldOrders : 0;
-
-    return {
-      counts: {
-        waitingPayment,
-        processing,
-        shipped,
-        delivered,
-        cancelled,
-      },
-      summary: {
-        totalOrders,
-        soldOrders,
-        totalRevenue,
-        averageTicket,
-      },
-    };
-  }
 
   async findAll(query: QueryAdminOrdersDto) {
     const page = query.page ?? 1;

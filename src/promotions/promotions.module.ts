@@ -12,6 +12,6 @@ import { PromotionsService } from './promotions.service';
     PromotionEngineService,
     PromotionAnalyticsService,
   ],
-  exports: [PromotionsService, PromotionEngineService],
+  exports: [PromotionsService, PromotionEngineService, PromotionAnalyticsService],
 })
 export class PromotionsModule {}
