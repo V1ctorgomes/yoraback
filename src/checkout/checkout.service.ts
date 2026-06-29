@@ -10,6 +10,7 @@ import { buildPaymentExpiresAt } from '../orders/order-payment.constants';
 import { OrderExpirationService } from '../orders/order-expiration.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShippingService } from '../shipping/shipping.service';
+import { PromotionEngineService } from '../promotions/promotion-engine.service';
 import { CheckoutDto } from './dto/checkout.dto';
 
 const cartItemInclude = {
@@ -22,6 +23,8 @@ const cartItemInclude = {
           basePrice: true,
           coverImage: true,
           isActive: true,
+          categoryId: true,
+          collectionId: true,
         },
       },
     },
@@ -44,6 +47,7 @@ export class CheckoutService {
     private customersService: CustomersService,
     private orderExpiration: OrderExpirationService,
     private shippingService: ShippingService,
+    private promotionEngine: PromotionEngineService,
   ) {}
 
   async checkout(
@@ -81,8 +85,6 @@ export class CheckoutService {
     );
 
     const shippingPrice = shippingQuote.price;
-    const discount = 0;
-    const total = subtotal + shippingPrice - discount;
 
     const customer = await this.customersService.findOrCreateForCheckout({
       name: dto.customer.name,
@@ -90,6 +92,37 @@ export class CheckoutService {
       phone: dto.customer.phone,
       linkedUserId,
     });
+
+    const promotionCartItems = validatedItems.map((item) => ({
+      productId: item.productId,
+      categoryId: item.categoryId,
+      collectionId: item.collectionId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      subtotal: item.subtotal,
+    }));
+
+    const promotionResult = await this.promotionEngine.validate({
+      code: dto.promotionCode?.trim() || undefined,
+      customerId: customer.id,
+      cartItems: promotionCartItems,
+      subtotal,
+      shippingPrice,
+    });
+
+    if (dto.promotionCode?.trim() && !promotionResult.valid) {
+      throw new BadRequestException(
+        promotionResult.reason ?? 'Cupom inválido',
+      );
+    }
+
+    const discount = promotionResult.valid ? promotionResult.discountAmount : 0;
+    const effectiveShippingPrice = promotionResult.valid
+      ? promotionResult.shippingPrice
+      : shippingPrice;
+    const total = promotionResult.valid
+      ? promotionResult.total
+      : subtotal + shippingPrice;
 
     const order = await this.prisma.$transaction(async (tx) => {
       for (const item of validatedItems) {
@@ -126,11 +159,17 @@ export class CheckoutService {
           shippingMethodId: shippingQuote.shippingMethodId,
           shippingProvider: shippingQuote.provider,
           shippingService: shippingQuote.service,
-          shippingPrice,
+          shippingPrice: effectiveShippingPrice,
           shippingDeadlineDays: shippingQuote.deadline,
           subtotal,
           discount,
           total,
+          promotionId: promotionResult.valid
+            ? promotionResult.promotion?.id ?? null
+            : null,
+          promotionCode: promotionResult.valid
+            ? promotionResult.promotion?.code ?? null
+            : null,
           paymentExpiresAt: buildPaymentExpiresAt(),
           items: {
             create: validatedItems.map((item) => ({
@@ -163,6 +202,15 @@ export class CheckoutService {
         include: orderInclude,
       });
 
+      if (promotionResult.valid && promotionResult.promotion) {
+        await this.promotionEngine.registerUsage(
+          promotionResult.promotion.id,
+          customer.id,
+          createdOrder.id,
+          tx,
+        );
+      }
+
       await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
 
       return createdOrder;
@@ -189,6 +237,8 @@ export class CheckoutService {
   private validateCartItems(items: CartItemWithRelations[]) {
     const validated: Array<{
       productId: string;
+      categoryId: string;
+      collectionId: string | null;
       productVariantId: string;
       productName: string;
       sku: string;
@@ -220,6 +270,8 @@ export class CheckoutService {
 
       validated.push({
         productId: product.id,
+        categoryId: product.categoryId,
+        collectionId: product.collectionId,
         productVariantId: variant.id,
         productName: product.name,
         sku: variant.sku,
@@ -281,6 +333,7 @@ export class CheckoutService {
       trackingCode: order.trackingCode,
       subtotal: Number(order.subtotal),
       discount: Number(order.discount),
+      promotionCode: order.promotionCode,
       total: Number(order.total),
       paymentExpiresAt: order.paymentExpiresAt.toISOString(),
       createdAt: order.createdAt.toISOString(),

@@ -9,6 +9,7 @@ import { CollectionsService } from './collections/collections.service';
 import { ProductsService } from './products/products.service';
 import { ProductVariantsService } from './products/product-variants.service';
 import { ProductImagesService } from './products/product-images.service';
+import { PromotionsService } from './promotions/promotions.service';
 import { PrismaService } from './prisma/prisma.service';
 import { syncSeedImages } from './common/sync-seed-images';
 
@@ -52,6 +53,9 @@ async function bootstrap() {
 
   const collectionsService = app.get(CollectionsService);
   await collectionsService.seedDefaults();
+
+  const promotionsService = app.get(PromotionsService);
+  await promotionsService.seedDefaults();
 
   const prisma = app.get(PrismaService);
   await syncSeedImages(prisma);

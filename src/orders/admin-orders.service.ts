@@ -307,6 +307,7 @@ export class AdminOrdersService {
       subtotal: Number(order.subtotal),
       shippingPrice: Number(order.shippingPrice),
       discount: Number(order.discount),
+      promotionCode: order.promotionCode,
       total: Number(order.total),
       itemCount,
       paymentExpiresAt: order.paymentExpiresAt.toISOString(),

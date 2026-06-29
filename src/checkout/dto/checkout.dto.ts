@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsUUID, ValidateNested } from 'class-validator';
+import { IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { CheckoutAddressDto } from './checkout-address.dto';
 import { CheckoutCustomerDto } from './checkout-customer.dto';
 
@@ -14,4 +14,8 @@ export class CheckoutDto {
 
   @IsUUID()
   shippingMethodId!: string;
+
+  @IsOptional()
+  @IsString()
+  promotionCode?: string;
 }

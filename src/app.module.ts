@@ -14,6 +14,7 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
 import { ShippingModule } from './shipping/shipping.module';
+import { PromotionsModule } from './promotions/promotions.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ShippingModule } from './shipping/shipping.module';
     PaymentsModule,
     ProductsModule,
     ShippingModule,
+    PromotionsModule,
     HealthModule,
   ],
 })
