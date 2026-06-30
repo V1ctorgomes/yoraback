@@ -247,6 +247,41 @@ model ShippingMethod {
   @@map("shipping_methods")
 }
 
+model ShippingCarrier {
+  id            String            @id @default(uuid())
+  provider      String
+  externalId    String            @map("external_id")
+  name          String
+  logoUrl       String?           @map("logo_url")
+  isActive      Boolean           @default(true) @map("is_active")
+  displayOrder  Int               @default(0) @map("display_order")
+  customMessage String?           @map("custom_message")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  services      ShippingService[]
+
+  @@unique([provider, externalId])
+  @@map("shipping_carriers")
+}
+
+model ShippingService {
+  id            String          @id @default(uuid())
+  carrierId     String          @map("carrier_id")
+  carrier       ShippingCarrier @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  externalId    String          @map("external_id")
+  name          String
+  description   String?
+  isActive      Boolean         @default(true) @map("is_active")
+  displayOrder  Int             @default(0) @map("display_order")
+  customMessage String?         @map("custom_message")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  orders        Order[]
+
+  @@unique([carrierId, externalId])
+  @@map("shipping_services")
+}
+
 model Order {
   id                   String          @id @default(uuid())
   orderNumber          String          @unique @map("order_number")
@@ -260,6 +295,8 @@ model Order {
   shippingMethod       String          @map("shipping_method")
   shippingMethodId     String?         @map("shipping_method_id")
   shippingMethodRef    ShippingMethod? @relation(fields: [shippingMethodId], references: [id], onDelete: SetNull)
+  shippingServiceId    String?         @map("shipping_service_id")
+  shippingServiceRef   ShippingService? @relation(fields: [shippingServiceId], references: [id], onDelete: SetNull)
   shippingProvider     String?         @map("shipping_provider")
   shippingService      String?         @map("shipping_service")
   shippingPrice        Decimal         @map("shipping_price") @db.Decimal(10, 2)
@@ -532,6 +569,7 @@ model MelhorEnvioConfig {
   tokenExpiresAt        DateTime?              @map("token_expires_at")
   environment           MelhorEnvioEnvironment @default(SANDBOX)
   isConnected           Boolean                @default(false) @map("is_connected")
+  lastSyncedAt          DateTime?              @map("last_synced_at")
   updatedAt             DateTime               @updatedAt @map("updated_at")
 
   @@map("melhor_envio_configs")

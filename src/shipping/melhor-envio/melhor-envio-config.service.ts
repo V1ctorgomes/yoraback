@@ -33,6 +33,7 @@ export class MelhorEnvioConfigService {
       environment: config.environment,
       isConnected: config.isConnected,
       tokenExpiresAt: config.tokenExpiresAt?.toISOString() ?? null,
+      lastSyncedAt: config.lastSyncedAt?.toISOString() ?? null,
       updatedAt: config.updatedAt.toISOString(),
     };
   }
@@ -192,6 +193,7 @@ export class MelhorEnvioConfigService {
     environment: MelhorEnvioEnvironment;
     isConnected: boolean;
     tokenExpiresAt: Date | null;
+    lastSyncedAt: Date | null;
     updatedAt: Date;
   }) {
     return {
@@ -202,6 +204,7 @@ export class MelhorEnvioConfigService {
       environment: config.environment,
       isConnected: config.isConnected,
       tokenExpiresAt: config.tokenExpiresAt?.toISOString() ?? null,
+      lastSyncedAt: config.lastSyncedAt?.toISOString() ?? null,
       updatedAt: config.updatedAt.toISOString(),
     };
   }

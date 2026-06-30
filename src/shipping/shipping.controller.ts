@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { CalculateShippingDto } from './dto/calculate-shipping.dto';
 import { ShippingService } from './shipping.service';
 
@@ -14,10 +14,5 @@ export class ShippingController {
   @Post('quote')
   quote(@Body() dto: CalculateShippingDto) {
     return this.shippingService.calculate(dto);
-  }
-
-  @Get('providers')
-  getProviders() {
-    return this.shippingService.getProviders();
   }
 }

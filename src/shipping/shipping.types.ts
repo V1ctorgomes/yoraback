@@ -1,7 +1,5 @@
 export const SHIPPING_PROVIDERS = {
-  CORREIOS: 'Correios',
   MELHOR_ENVIO: 'MelhorEnvio',
-  RETIRADA_LOJA: 'RetiradaLoja',
 } as const;
 
 export type ShippingProviderName =
@@ -14,19 +12,28 @@ export interface ShippingCartItem {
 
 export interface ShippingQuote {
   shippingMethodId: string;
+  shippingServiceId: string;
   provider: string;
+  carrier: string;
   service: string;
   serviceCode: string;
   price: number;
   deadline: number;
-  externalServiceId?: number;
+  message: string | null;
+  externalServiceId: number;
 }
 
-export interface ShippingMethodRecord {
+export interface ActiveShippingServiceRecord {
   id: string;
+  externalId: string;
   name: string;
-  provider: string;
-  serviceCode: string;
-  isActive: boolean;
   displayOrder: number;
+  customMessage: string | null;
+  carrier: {
+    id: string;
+    name: string;
+    isActive: boolean;
+    displayOrder: number;
+    customMessage: string | null;
+  };
 }

@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  ActiveShippingServiceRecord,
   SHIPPING_PROVIDERS,
   ShippingCartItem,
-  ShippingMethodRecord,
   ShippingQuote,
 } from '../shipping.types';
 import { ShippingProvider } from './shipping-provider.interface';
@@ -31,7 +31,7 @@ export class MelhorEnvioProvider implements ShippingProvider {
   async calculate(
     zipCode: string,
     items: ShippingCartItem[],
-    methods: ShippingMethodRecord[],
+    services: ActiveShippingServiceRecord[],
   ): Promise<ShippingQuote[]> {
     const isReady = await this.configService.isReady();
     if (!isReady) {
@@ -45,6 +45,11 @@ export class MelhorEnvioProvider implements ShippingProvider {
       if (!accessToken) {
         return [];
       }
+
+      const activeExternalIds = new Set(services.map((service) => service.externalId));
+      const serviceMap = new Map(
+        services.map((service) => [service.externalId, service]),
+      );
 
       const variantIds = items.map((item) => item.productVariantId);
       const variants = await this.prisma.productVariant.findMany({
@@ -86,7 +91,7 @@ export class MelhorEnvioProvider implements ShippingProvider {
         };
       });
 
-      const services = this.normalizeQuoteServices(
+      const remoteServices = this.normalizeQuoteServices(
         await this.apiClient.calculateQuote(environment, accessToken, {
           from: { postal_code: fromZip },
           to: { postal_code: zipCode.replace(/\D/g, '') },
@@ -96,24 +101,35 @@ export class MelhorEnvioProvider implements ShippingProvider {
 
       const quotes: ShippingQuote[] = [];
 
-      for (const service of services) {
-        const method = await this.ensureShippingMethod(service);
-        const isActive = methods.some(
-          (entry) => entry.id === method.id && entry.isActive,
-        );
-
-        if (!isActive && methods.length > 0) {
+      for (const remote of remoteServices) {
+        const externalId = String(remote.id);
+        if (!activeExternalIds.has(externalId)) {
           continue;
         }
 
+        const configured = serviceMap.get(externalId);
+        if (!configured) {
+          continue;
+        }
+
+        const carrierName = remote.company.name;
+        const serviceName = remote.name;
+        const message =
+          configured.customMessage ??
+          configured.carrier.customMessage ??
+          null;
+
         quotes.push({
-          shippingMethodId: method.id,
+          shippingMethodId: configured.id,
+          shippingServiceId: configured.id,
           provider: this.name,
-          service: `${service.company.name} ${service.name}`,
-          serviceCode: String(service.id),
-          price: Number(service.custom_price ?? service.price),
-          deadline: Number(service.custom_delivery_time ?? service.delivery_time),
-          externalServiceId: service.id,
+          carrier: carrierName,
+          service: serviceName,
+          serviceCode: externalId,
+          price: Number(remote.custom_price ?? remote.price),
+          deadline: Number(remote.custom_delivery_time ?? remote.delivery_time),
+          message,
+          externalServiceId: remote.id,
         });
       }
 
@@ -137,47 +153,5 @@ export class MelhorEnvioProvider implements ShippingProvider {
     }
 
     return Object.values(payload).flat();
-  }
-
-  private async ensureShippingMethod(service: {
-    id: number;
-    name: string;
-    company: { name: string };
-  }) {
-    const serviceCode = String(service.id);
-    const name = `${service.company.name} ${service.name}`;
-
-    const existing = await this.prisma.shippingMethod.findUnique({
-      where: {
-        provider_serviceCode: {
-          provider: this.name,
-          serviceCode,
-        },
-      },
-    });
-
-    if (existing) {
-      if (existing.name !== name) {
-        return this.prisma.shippingMethod.update({
-          where: { id: existing.id },
-          data: { name },
-        });
-      }
-      return existing;
-    }
-
-    const maxOrder = await this.prisma.shippingMethod.aggregate({
-      _max: { displayOrder: true },
-    });
-
-    return this.prisma.shippingMethod.create({
-      data: {
-        name,
-        provider: this.name,
-        serviceCode,
-        displayOrder: (maxOrder._max.displayOrder ?? 0) + 1,
-        isActive: true,
-      },
-    });
   }
 }

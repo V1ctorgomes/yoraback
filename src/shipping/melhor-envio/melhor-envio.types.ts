@@ -39,6 +39,18 @@ export interface MelhorEnvioQuoteService {
   };
 }
 
+export interface MelhorEnvioShipmentService {
+  id: number;
+  name: string;
+  type?: string;
+  range?: string;
+  company: {
+    id: number;
+    name: string;
+    picture: string;
+  };
+}
+
 export interface MelhorEnvioCartProduct {
   name: string;
   quantity: number;

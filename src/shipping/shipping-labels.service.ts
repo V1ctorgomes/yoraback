@@ -335,7 +335,11 @@ export class ShippingLabelsService {
 
   private async resolveServiceId(
     order: Prisma.OrderGetPayload<{
-      include: { address: true; shippingMethodRef: true };
+      include: {
+        address: true;
+        shippingMethodRef: true;
+        shippingServiceRef: true;
+      };
     }>,
     dto: CreateShippingLabelDto,
     quoteProducts: Array<{
@@ -355,9 +359,12 @@ export class ShippingLabelsService {
       return dto.serviceId;
     }
 
-    const serviceCode = order.shippingMethodRef?.serviceCode;
+    const serviceCode =
+      order.shippingServiceRef?.externalId ??
+      order.shippingMethodRef?.serviceCode;
     if (
-      order.shippingMethodRef?.provider === SHIPPING_PROVIDERS.MELHOR_ENVIO &&
+      (order.shippingServiceRef ||
+        order.shippingMethodRef?.provider === SHIPPING_PROVIDERS.MELHOR_ENVIO) &&
       serviceCode &&
       /^\d+$/.test(serviceCode)
     ) {
@@ -462,6 +469,7 @@ export class ShippingLabelsService {
         items: true,
         address: true,
         shippingMethodRef: true,
+        shippingServiceRef: true,
       },
     });
 

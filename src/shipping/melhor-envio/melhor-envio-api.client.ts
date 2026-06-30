@@ -6,6 +6,7 @@ import {
   MelhorEnvioPrintResponse,
   MelhorEnvioQuoteRequest,
   MelhorEnvioQuoteService,
+  MelhorEnvioShipmentService,
   MelhorEnvioTokenResponse,
   MelhorEnvioTrackingEvent,
 } from './melhor-envio.types';
@@ -83,6 +84,17 @@ export class MelhorEnvioApiClient {
         accessToken,
         body: payload,
       },
+    );
+  }
+
+  async listShipmentServices(
+    environment: MelhorEnvioEnvironment,
+    accessToken: string,
+  ): Promise<MelhorEnvioShipmentService[]> {
+    return this.request<MelhorEnvioShipmentService[]>(
+      environment,
+      '/api/v2/me/shipment/services',
+      { method: 'GET', accessToken },
     );
   }
 
