@@ -255,6 +255,7 @@ model Order {
   customerName         String          @map("customer_name")
   customerEmail        String          @map("customer_email")
   customerPhone        String          @map("customer_phone")
+  customerCpf          String?         @map("customer_cpf")
   status               OrderStatus     @default(WAITING_PAYMENT)
   shippingMethod       String          @map("shipping_method")
   shippingMethodId     String?         @map("shipping_method_id")
@@ -335,22 +336,27 @@ model Address {
   city       String
   state      String
   country    String  @default("BR")
+  reference  String?
 
   @@map("addresses")
 }
 
 model Customer {
-  id        String            @id @default(uuid())
-  name      String
-  email     String            @unique
-  phone     String
-  isGuest   Boolean           @default(true) @map("is_guest")
-  userId    String?           @unique @map("user_id")
-  user      User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
-  orders    Order[]
-  addresses CustomerAddress[]
+  id            String            @id @default(uuid())
+  name          String
+  email         String
+  phone         String
+  cpf           String?
+  cpfNormalized String?           @unique @map("cpf_normalized")
+  cpfPending    Boolean           @default(true) @map("cpf_pending")
+  birthDate     DateTime?         @map("birth_date") @db.Date
+  isGuest       Boolean           @default(true) @map("is_guest")
+  userId        String?           @unique @map("user_id")
+  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  orders        Order[]
+  addresses     CustomerAddress[]
   promotionUsages PromotionUsage[]
 
   @@index([email])
@@ -370,6 +376,7 @@ model CustomerAddress {
   city       String
   state      String
   country    String   @default("BR")
+  reference  String?
   isPrimary  Boolean  @default(false) @map("is_primary")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")

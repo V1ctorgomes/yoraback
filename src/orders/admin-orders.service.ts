@@ -246,6 +246,7 @@ export class AdminOrdersService {
         name: order.customerName,
         email: order.customerEmail,
         phone: order.customerPhone,
+        cpf: order.customerCpf,
       },
       shippingMethod: order.shippingMethod,
       shippingLabel: order.shippingService ?? order.shippingMethod,

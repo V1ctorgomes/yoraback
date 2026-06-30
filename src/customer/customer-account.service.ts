@@ -177,6 +177,9 @@ export class CustomerAccountService {
           ...(dto.country !== undefined
             ? { country: dto.country.trim() || 'BR' }
             : {}),
+          ...(dto.reference !== undefined
+            ? { reference: dto.reference.trim() || null }
+            : {}),
           ...(dto.isPrimary !== undefined ? { isPrimary: dto.isPrimary } : {}),
         },
       });
@@ -314,6 +317,7 @@ export class CustomerAccountService {
       city: dto.city.trim(),
       state: dto.state.trim(),
       country: dto.country?.trim() || 'BR',
+      reference: dto.reference?.trim() || null,
       isPrimary,
     };
   }
@@ -355,6 +359,7 @@ export class CustomerAccountService {
     city: string;
     state: string;
     country: string;
+    reference: string | null;
     isPrimary: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -370,6 +375,7 @@ export class CustomerAccountService {
       city: address.city,
       state: address.state,
       country: address.country,
+      reference: address.reference,
       isPrimary: address.isPrimary,
       createdAt: address.createdAt.toISOString(),
       updatedAt: address.updatedAt.toISOString(),
@@ -439,6 +445,7 @@ export class CustomerAccountService {
             city: order.address.city,
             state: order.address.state,
             country: order.address.country,
+            reference: order.address.reference,
           }
         : null,
     };

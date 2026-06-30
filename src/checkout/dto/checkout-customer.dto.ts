@@ -1,9 +1,19 @@
-import { IsEmail, IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
+import { IsCpf } from '../../common/validators/is-cpf.decorator';
 
 export class CheckoutCustomerDto {
   @IsString()
   @MinLength(2)
   name!: string;
+
+  @IsCpf()
+  cpf!: string;
 
   @IsEmail()
   email!: string;

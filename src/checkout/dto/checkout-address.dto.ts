@@ -2,6 +2,10 @@ import { IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class CheckoutAddressDto {
   @IsString()
+  @MinLength(2)
+  recipientName!: string;
+
+  @IsString()
   @Matches(/^\d{5}-?\d{3}$/, { message: 'CEP inválido' })
   zipCode!: string;
 
@@ -32,4 +36,8 @@ export class CheckoutAddressDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @IsOptional()
+  @IsString()
+  reference?: string;
 }

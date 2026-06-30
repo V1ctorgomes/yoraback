@@ -43,6 +43,8 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    assertPasswordsMatch(dto.password, dto.confirmPassword);
+
     const email = dto.email.toLowerCase().trim();
     const existing = await this.prisma.user.findUnique({ where: { email } });
 
@@ -55,7 +57,7 @@ export class AuthService {
       data: {
         name: dto.name.trim(),
         email,
-        phone: dto.phone?.trim(),
+        phone: dto.phone.trim(),
         passwordHash,
         role: Role.CUSTOMER,
       },
@@ -65,7 +67,8 @@ export class AuthService {
       userId: user.id,
       name: user.name,
       email: user.email,
-      phone: user.phone ?? undefined,
+      phone: user.phone ?? dto.phone.trim(),
+      cpf: dto.cpf,
     });
 
     return this.buildAuthResponse(user);
@@ -98,15 +101,6 @@ export class AuthService {
       where: { id: user.id },
       data: { lastLogin: new Date() },
     });
-
-    if (updated.role === Role.CUSTOMER) {
-      await this.customersService.linkUserOnRegister({
-        userId: updated.id,
-        name: updated.name,
-        email: updated.email,
-        phone: updated.phone ?? undefined,
-      });
-    }
 
     return this.buildAuthResponse(updated);
   }

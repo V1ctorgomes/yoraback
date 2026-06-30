@@ -38,5 +38,9 @@ export class CreateCustomerAddressDto {
   country?: string;
 
   @IsOptional()
+  @IsString()
+  reference?: string;
+
+  @IsOptional()
   isPrimary?: boolean;
 }

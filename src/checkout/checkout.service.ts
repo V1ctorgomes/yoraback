@@ -90,8 +90,11 @@ export class CheckoutService {
       name: dto.customer.name,
       email: dto.customer.email,
       phone: dto.customer.phone,
+      cpf: dto.customer.cpf,
       linkedUserId,
     });
+
+    const customerCpf = customer.cpfNormalized;
 
     const promotionCartItems = validatedItems.map((item) => ({
       productId: item.productId,
@@ -154,6 +157,7 @@ export class CheckoutService {
           customerName: dto.customer.name.trim(),
           customerEmail: dto.customer.email.trim().toLowerCase(),
           customerPhone: dto.customer.phone.trim(),
+          customerCpf,
           status: OrderStatus.WAITING_PAYMENT,
           shippingMethod: shippingQuote.serviceCode,
           shippingMethodId: shippingQuote.shippingMethodId,
@@ -187,7 +191,7 @@ export class CheckoutService {
           },
           address: {
             create: {
-              recipient: dto.customer.name.trim(),
+              recipient: dto.address.recipientName.trim(),
               zipCode: dto.address.zipCode.replace(/\D/g, ''),
               street: dto.address.street.trim(),
               number: dto.address.number.trim(),
@@ -196,6 +200,7 @@ export class CheckoutService {
               city: dto.address.city.trim(),
               state: dto.address.state.trim(),
               country: dto.address.country?.trim() || 'BR',
+              reference: dto.address.reference?.trim() || null,
             },
           },
         },
@@ -322,6 +327,7 @@ export class CheckoutService {
         name: order.customerName,
         email: order.customerEmail,
         phone: order.customerPhone,
+        cpf: order.customerCpf,
       },
       shippingMethod: order.shippingMethod,
       shippingMethodId: order.shippingMethodId,
@@ -357,6 +363,7 @@ export class CheckoutService {
             city: order.address.city,
             state: order.address.state,
             country: order.address.country,
+            reference: order.address.reference,
           }
         : null,
     };

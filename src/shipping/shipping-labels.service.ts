@@ -504,12 +504,14 @@ export class ShippingLabelsService {
     city: string;
     state: string;
   }): MelhorEnvioAddressPayload {
+    const companyDocument = this.normalizeCnpj(sender.company);
+
     return {
       name: sender.name,
       phone: sender.phone,
       email: 'contato@yora.com.br',
       document: sender.document,
-      company_document: sender.company ?? undefined,
+      company_document: companyDocument,
       address: sender.address,
       complement: sender.complement ?? undefined,
       number: sender.number,
@@ -528,11 +530,17 @@ export class ShippingLabelsService {
       throw new BadRequestException('Pedido sem endereço');
     }
 
+    if (!order.customerCpf) {
+      throw new BadRequestException(
+        'Pedido sem CPF do cliente. Finalize um novo pedido com CPF informado.',
+      );
+    }
+
     return {
       name: order.address.recipient,
       phone: order.customerPhone.replace(/\D/g, ''),
       email: order.customerEmail,
-      document: '00000000000',
+      document: order.customerCpf,
       address: order.address.street,
       complement: order.address.complement ?? undefined,
       number: order.address.number,
@@ -541,8 +549,19 @@ export class ShippingLabelsService {
       state_abbr: this.normalizeStateAbbr(order.address.state),
       country_id: 'BR',
       postal_code: order.address.zipCode.replace(/\D/g, ''),
-      note: `Pedido ${order.orderNumber}`,
+      note: order.address.reference
+        ? `Pedido ${order.orderNumber} — ${order.address.reference}`
+        : `Pedido ${order.orderNumber}`,
     };
+  }
+
+  private normalizeCnpj(value: string | null) {
+    if (!value) {
+      return undefined;
+    }
+
+    const digits = value.replace(/\D/g, '');
+    return digits.length === 14 ? digits : undefined;
   }
 
   private mapLabel(order: {
