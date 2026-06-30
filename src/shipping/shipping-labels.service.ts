@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MelhorEnvioApiClient } from './melhor-envio/melhor-envio-api.client';
 import { MelhorEnvioConfigService } from './melhor-envio/melhor-envio-config.service';
 import { MelhorEnvioAddressPayload } from './melhor-envio/melhor-envio.types';
+import type { MelhorEnvioQuoteService } from './melhor-envio/melhor-envio.types';
 import { ShippingPackageSelectorService } from './shipping-package-selector.service';
 import { ShippingSendersService } from './shipping-senders.service';
 import { SHIPPING_PROVIDERS } from './shipping.types';
@@ -76,11 +77,6 @@ export class ShippingLabelsService {
       })),
     );
 
-    const serviceId = Number(order.shippingMethodRef?.serviceCode ?? dto.serviceId);
-    if (!serviceId) {
-      throw new BadRequestException('Serviço de frete inválido para etiqueta');
-    }
-
     const products = order.items.map((item) => ({
       id: item.productVariantId,
       width: packageInfo.widthCm,
@@ -90,6 +86,15 @@ export class ShippingLabelsService {
       insurance_value: Number(item.unitPrice),
       quantity: item.quantity,
     }));
+
+    const serviceId = await this.resolveServiceId(
+      order,
+      dto,
+      products,
+      sender,
+      accessToken,
+      environment,
+    );
 
     const cart = await this.apiClient.addToCart(environment, accessToken, {
       service: serviceId,
@@ -257,6 +262,130 @@ export class ShippingLabelsService {
     });
 
     return print;
+  }
+
+  private async resolveServiceId(
+    order: Prisma.OrderGetPayload<{
+      include: { address: true; shippingMethodRef: true };
+    }>,
+    dto: CreateShippingLabelDto,
+    products: Array<{
+      id: string;
+      width: number;
+      height: number;
+      length: number;
+      weight: number;
+      insurance_value: number;
+      quantity: number;
+    }>,
+    sender: { zipCode: string },
+    accessToken: string,
+    environment: Awaited<ReturnType<MelhorEnvioConfigService['getEnvironment']>>,
+  ): Promise<number> {
+    if (dto.serviceId && dto.serviceId > 0) {
+      return dto.serviceId;
+    }
+
+    const serviceCode = order.shippingMethodRef?.serviceCode;
+    if (
+      order.shippingMethodRef?.provider === SHIPPING_PROVIDERS.MELHOR_ENVIO &&
+      serviceCode &&
+      /^\d+$/.test(serviceCode)
+    ) {
+      return Number(serviceCode);
+    }
+
+    if (!order.address) {
+      throw new BadRequestException('Pedido sem endereço de entrega');
+    }
+
+    const services = await this.apiClient.calculateQuote(
+      environment,
+      accessToken,
+      {
+        from: { postal_code: sender.zipCode.replace(/\D/g, '') },
+        to: { postal_code: order.address.zipCode.replace(/\D/g, '') },
+        products,
+      },
+    );
+
+    const matched = this.matchQuoteService(services, order);
+
+    if (!matched) {
+      throw new BadRequestException(
+        'Não foi possível encontrar um serviço equivalente no Melhor Envio para este pedido. Verifique se o Melhor Envio está conectado e se o CEP é atendido.',
+      );
+    }
+
+    return matched;
+  }
+
+  private matchQuoteService(
+    services: MelhorEnvioQuoteService[],
+    order: {
+      shippingMethod: string;
+      shippingProvider: string | null;
+      shippingService: string | null;
+      shippingMethodRef: { name: string; serviceCode: string } | null;
+    },
+  ): number | null {
+    if (services.length === 0) {
+      return null;
+    }
+
+    const hint = [
+      order.shippingService,
+      order.shippingMethod,
+      order.shippingProvider,
+      order.shippingMethodRef?.name,
+      order.shippingMethodRef?.serviceCode,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toUpperCase();
+
+    const rules: Array<{ keyword: string; company?: string }> = [
+      { keyword: 'SEDEX', company: 'CORREIOS' },
+      { keyword: 'PAC', company: 'CORREIOS' },
+      { keyword: 'JADLOG' },
+      { keyword: 'AZUL' },
+      { keyword: 'LATAM' },
+    ];
+
+    for (const rule of rules) {
+      if (!hint.includes(rule.keyword)) {
+        continue;
+      }
+
+      const match = services.find((service) => {
+        const serviceName = service.name.toUpperCase();
+        const companyName = service.company.name.toUpperCase();
+
+        if (!serviceName.includes(rule.keyword)) {
+          return false;
+        }
+
+        if (rule.company && !companyName.includes(rule.company)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      if (match) {
+        return match.id;
+      }
+    }
+
+    const looseMatch = services.find((service) => {
+      const label = `${service.company.name} ${service.name}`.toUpperCase();
+      return hint
+        .split(/\s+/)
+        .filter((token) => token.length >= 3)
+        .some((token) => label.includes(token));
+    });
+
+    return looseMatch?.id ?? services[0]?.id ?? null;
   }
 
   private async getOrderForLabel(orderId: string) {
