@@ -72,8 +72,10 @@ export class MelhorEnvioApiClient {
     environment: MelhorEnvioEnvironment,
     accessToken: string,
     payload: MelhorEnvioQuoteRequest,
-  ): Promise<MelhorEnvioQuoteService[]> {
-    return this.request<MelhorEnvioQuoteService[]>(
+  ): Promise<MelhorEnvioQuoteService[] | Record<string, MelhorEnvioQuoteService[]>> {
+    return this.request<
+      MelhorEnvioQuoteService[] | Record<string, MelhorEnvioQuoteService[]>
+    >(
       environment,
       '/api/v2/me/shipment/calculate',
       {
@@ -225,8 +227,9 @@ export class MelhorEnvioApiClient {
 
         if (!response.ok) {
           const errorBody = await response.text();
+          const message = this.extractErrorMessage(errorBody);
           throw new Error(
-            `Melhor Envio ${options.method} ${path} falhou (${response.status}): ${errorBody}`,
+            `Melhor Envio ${options.method} ${path} falhou (${response.status}): ${message}`,
           );
         }
 
@@ -249,5 +252,33 @@ export class MelhorEnvioApiClient {
     }
 
     throw lastError ?? new Error('Falha na requisição ao Melhor Envio');
+  }
+
+  private extractErrorMessage(errorBody: string) {
+    try {
+      const parsed = JSON.parse(errorBody) as {
+        message?: string;
+        error?: string;
+        errors?: Record<string, string[]>;
+      };
+
+      if (parsed.message) {
+        return parsed.message;
+      }
+
+      if (parsed.error) {
+        return parsed.error;
+      }
+
+      if (parsed.errors) {
+        return Object.entries(parsed.errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join(' | ');
+      }
+    } catch {
+      // mantém texto bruto
+    }
+
+    return errorBody;
   }
 }

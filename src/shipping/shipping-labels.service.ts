@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { LogisticStatus, OrderStatus, Prisma } from '@prisma/client';
@@ -23,6 +24,8 @@ const PAID_STATUSES: OrderStatus[] = [
 
 @Injectable()
 export class ShippingLabelsService {
+  private readonly logger = new Logger(ShippingLabelsService.name);
+
   constructor(
     private prisma: PrismaService,
     private configService: MelhorEnvioConfigService,
@@ -32,6 +35,35 @@ export class ShippingLabelsService {
   ) {}
 
   async purchaseLabel(dto: CreateShippingLabelDto) {
+    try {
+      return await this.purchaseLabelInternal(dto);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Falha ao gerar etiqueta no Melhor Envio';
+
+      this.logger.error(
+        `Erro ao comprar etiqueta do pedido ${dto.orderId}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      throw new BadRequestException(
+        message.includes('Melhor Envio')
+          ? message
+          : `Não foi possível gerar a etiqueta: ${message}`,
+      );
+    }
+  }
+
+  private async purchaseLabelInternal(dto: CreateShippingLabelDto) {
     const order = await this.getOrderForLabel(dto.orderId);
 
     if (!PAID_STATUSES.includes(order.status)) {
@@ -77,20 +109,31 @@ export class ShippingLabelsService {
       })),
     );
 
-    const products = order.items.map((item) => ({
+    const quoteProducts = order.items.map((item) => ({
       id: item.productVariantId,
       width: packageInfo.widthCm,
       height: packageInfo.heightCm,
       length: packageInfo.lengthCm,
-      weight: packageInfo.totalWeightKg / order.items.length,
+      weight: this.clampWeight(packageInfo.totalWeightKg / order.items.length),
       insurance_value: Number(item.unitPrice),
       quantity: item.quantity,
     }));
 
+    const cartProducts = order.items.map((item) => ({
+      name: item.productName,
+      quantity: item.quantity,
+      unitary_value: Number(item.unitPrice),
+    }));
+
+    const insuranceValue = order.items.reduce(
+      (total, item) => total + Number(item.unitPrice) * item.quantity,
+      0,
+    );
+
     const serviceId = await this.resolveServiceId(
       order,
       dto,
-      products,
+      quoteProducts,
       sender,
       accessToken,
       environment,
@@ -100,17 +143,22 @@ export class ShippingLabelsService {
       service: serviceId,
       from: this.mapSender(sender),
       to: this.mapRecipient(order),
-      products,
+      products: cartProducts,
       volumes: [
         {
           height: packageInfo.heightCm,
           width: packageInfo.widthCm,
           length: packageInfo.lengthCm,
-          weight: packageInfo.totalWeightKg,
+          weight: this.clampWeight(packageInfo.totalWeightKg),
         },
       ],
       options: {
+        insurance_value: insuranceValue,
+        receipt: false,
+        own_hand: false,
+        reverse: false,
         non_commercial: true,
+        invoice: { key: '' },
       },
     });
 
@@ -120,12 +168,19 @@ export class ShippingLabelsService {
     const print = await this.apiClient.printLabels(environment, accessToken, [
       cart.id,
     ]);
+    const labelUrl = print.url ?? print.link;
+
+    if (!labelUrl) {
+      throw new BadRequestException(
+        'Etiqueta gerada, mas o Melhor Envio não retornou a URL de impressão.',
+      );
+    }
 
     const updated = await this.prisma.order.update({
       where: { id: order.id },
       data: {
         shippingLabelId: cart.id,
-        shippingLabelUrl: print.url,
+        shippingLabelUrl: labelUrl,
         trackingCode: cart.tracking ?? cart.self_tracking ?? order.trackingCode,
         logisticStatus: LogisticStatus.LABEL_CREATED,
         status:
@@ -219,12 +274,19 @@ export class ShippingLabelsService {
       order.shippingLabelId,
     ]);
 
+    const labelUrl = print.url ?? print.link;
+    if (!labelUrl) {
+      throw new BadRequestException(
+        'O Melhor Envio não retornou a URL de impressão.',
+      );
+    }
+
     await this.prisma.order.update({
       where: { id: orderId },
-      data: { shippingLabelUrl: print.url },
+      data: { shippingLabelUrl: labelUrl },
     });
 
-    return print;
+    return { url: labelUrl };
   }
 
   async printBatch(orderIds: string[]) {
@@ -258,10 +320,17 @@ export class ShippingLabelsService {
 
     await this.prisma.order.updateMany({
       where: { id: { in: orders.map((order) => order.id) } },
-      data: { shippingLabelUrl: print.url },
+      data: { shippingLabelUrl: print.url ?? print.link },
     });
 
-    return print;
+    const labelUrl = print.url ?? print.link;
+    if (!labelUrl) {
+      throw new BadRequestException(
+        'O Melhor Envio não retornou a URL de impressão em lote.',
+      );
+    }
+
+    return { url: labelUrl };
   }
 
   private async resolveServiceId(
@@ -269,7 +338,7 @@ export class ShippingLabelsService {
       include: { address: true; shippingMethodRef: true };
     }>,
     dto: CreateShippingLabelDto,
-    products: Array<{
+    quoteProducts: Array<{
       id: string;
       width: number;
       height: number;
@@ -299,14 +368,12 @@ export class ShippingLabelsService {
       throw new BadRequestException('Pedido sem endereço de entrega');
     }
 
-    const services = await this.apiClient.calculateQuote(
-      environment,
-      accessToken,
-      {
+    const services = this.normalizeQuoteServices(
+      await this.apiClient.calculateQuote(environment, accessToken, {
         from: { postal_code: sender.zipCode.replace(/\D/g, '') },
         to: { postal_code: order.address.zipCode.replace(/\D/g, '') },
-        products,
-      },
+        products: quoteProducts,
+      }),
     );
 
     const matched = this.matchQuoteService(services, order);
@@ -405,6 +472,25 @@ export class ShippingLabelsService {
     return order;
   }
 
+  private normalizeQuoteServices(
+    payload: MelhorEnvioQuoteService[] | Record<string, MelhorEnvioQuoteService[]>,
+  ): MelhorEnvioQuoteService[] {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    return Object.values(payload).flat();
+  }
+
+  private clampWeight(weight: number) {
+    return Math.max(0.01, Number(weight.toFixed(3)));
+  }
+
+  private normalizeStateAbbr(state: string) {
+    const normalized = state.trim().toUpperCase();
+    return normalized.length === 2 ? normalized : normalized.slice(0, 2);
+  }
+
   private mapSender(sender: {
     name: string;
     company: string | null;
@@ -429,7 +515,9 @@ export class ShippingLabelsService {
       number: sender.number,
       district: sender.district,
       city: sender.city,
-      postal_code: sender.zipCode,
+      state_abbr: this.normalizeStateAbbr(sender.state),
+      country_id: 'BR',
+      postal_code: sender.zipCode.replace(/\D/g, ''),
     };
   }
 
@@ -450,7 +538,10 @@ export class ShippingLabelsService {
       number: order.address.number,
       district: order.address.district,
       city: order.address.city,
+      state_abbr: this.normalizeStateAbbr(order.address.state),
+      country_id: 'BR',
       postal_code: order.address.zipCode.replace(/\D/g, ''),
+      note: `Pedido ${order.orderNumber}`,
     };
   }
 

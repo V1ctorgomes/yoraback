@@ -8,6 +8,7 @@ import {
 } from '../shipping.types';
 import { ShippingProvider } from './shipping-provider.interface';
 import { MelhorEnvioApiClient } from '../melhor-envio/melhor-envio-api.client';
+import type { MelhorEnvioQuoteService } from '../melhor-envio/melhor-envio.types';
 import { MelhorEnvioConfigService } from '../melhor-envio/melhor-envio-config.service';
 import { ShippingPackageSelectorService } from '../shipping-package-selector.service';
 import { ShippingSendersService } from '../shipping-senders.service';
@@ -85,14 +86,12 @@ export class MelhorEnvioProvider implements ShippingProvider {
         };
       });
 
-      const services = await this.apiClient.calculateQuote(
-        environment,
-        accessToken,
-        {
+      const services = this.normalizeQuoteServices(
+        await this.apiClient.calculateQuote(environment, accessToken, {
           from: { postal_code: fromZip },
           to: { postal_code: zipCode.replace(/\D/g, '') },
           products,
-        },
+        }),
       );
 
       const quotes: ShippingQuote[] = [];
@@ -126,6 +125,18 @@ export class MelhorEnvioProvider implements ShippingProvider {
       );
       return [];
     }
+  }
+
+  private normalizeQuoteServices(
+    payload:
+      | MelhorEnvioQuoteService[]
+      | Record<string, MelhorEnvioQuoteService[]>,
+  ) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    return Object.values(payload).flat();
   }
 
   private async ensureShippingMethod(service: {

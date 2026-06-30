@@ -39,18 +39,26 @@ export interface MelhorEnvioQuoteService {
   };
 }
 
+export interface MelhorEnvioCartProduct {
+  name: string;
+  quantity: number;
+  unitary_value: number;
+}
+
 export interface MelhorEnvioCartPayload {
   service: number;
   agency?: number | null;
   from: MelhorEnvioAddressPayload;
   to: MelhorEnvioAddressPayload;
-  products: MelhorEnvioQuoteProduct[];
+  products: MelhorEnvioCartProduct[];
   volumes: MelhorEnvioVolume[];
   options?: {
+    insurance_value?: number;
     receipt?: boolean;
     own_hand?: boolean;
     reverse?: boolean;
     non_commercial?: boolean;
+    invoice?: { key: string };
   };
 }
 
@@ -66,7 +74,8 @@ export interface MelhorEnvioAddressPayload {
   number: string;
   district: string;
   city: string;
-  country_id?: string;
+  state_abbr: string;
+  country_id: string;
   postal_code: string;
   note?: string;
 }
@@ -88,7 +97,8 @@ export interface MelhorEnvioCartResponse {
 }
 
 export interface MelhorEnvioPrintResponse {
-  url: string;
+  url?: string;
+  link?: string;
 }
 
 export interface MelhorEnvioTrackingEvent {
