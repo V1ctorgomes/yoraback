@@ -21,11 +21,14 @@ export class RevenueAnalyticsService {
     ]);
 
     return {
-      totalRevenue: total.netRevenue,
-      periodRevenue: period.netRevenue,
+      totalRevenue: total.storeNetRevenue,
+      periodRevenue: period.storeNetRevenue,
       grossRevenue: period.grossRevenue,
-      netRevenue: period.netRevenue,
+      netRevenue: period.storeNetRevenue,
+      collectedRevenue: period.collectedRevenue,
+      totalCollectedRevenue: total.collectedRevenue,
       averageTicket: period.averageTicket,
+      averageCollectedTicket: period.averageCollectedTicket,
       paidOrders: period.orderCount,
     };
   }
@@ -39,6 +42,7 @@ export class RevenueAnalyticsService {
       select: {
         createdAt: true,
         subtotal: true,
+        discount: true,
         total: true,
       },
       orderBy: { createdAt: 'asc' },
@@ -46,7 +50,10 @@ export class RevenueAnalyticsService {
 
     const dateKeys = buildDateSeries(range.from, range.to);
     const buckets = new Map(
-      dateKeys.map((date) => [date, { date, gross: 0, net: 0 }]),
+      dateKeys.map((date) => [
+        date,
+        { date, gross: 0, net: 0, collected: 0 },
+      ]),
     );
 
     for (const order of orders) {
@@ -55,16 +62,19 @@ export class RevenueAnalyticsService {
 
       if (!bucket) continue;
 
-      bucket.gross += Number(order.subtotal);
-      bucket.net += Number(order.total);
+      const subtotal = Number(order.subtotal);
+      const discount = Number(order.discount);
+      const total = Number(order.total);
+
+      bucket.gross += subtotal;
+      bucket.net += subtotal - discount;
+      bucket.collected += total;
     }
 
     return [...buckets.values()];
   }
 
-  private async aggregateRevenue(
-    extraWhere: Prisma.OrderWhereInput = {},
-  ) {
+  private async aggregateRevenue(extraWhere: Prisma.OrderWhereInput = {}) {
     const result = await this.prisma.order.aggregate({
       where: {
         status: { in: REVENUE_ORDER_STATUSES },
@@ -73,19 +83,25 @@ export class RevenueAnalyticsService {
       _count: { _all: true },
       _sum: {
         subtotal: true,
+        discount: true,
         total: true,
       },
     });
 
     const orderCount = result._count._all;
     const grossRevenue = Number(result._sum.subtotal ?? 0);
-    const netRevenue = Number(result._sum.total ?? 0);
+    const discountTotal = Number(result._sum.discount ?? 0);
+    const storeNetRevenue = grossRevenue - discountTotal;
+    const collectedRevenue = Number(result._sum.total ?? 0);
 
     return {
       orderCount,
       grossRevenue,
-      netRevenue,
-      averageTicket: orderCount > 0 ? netRevenue / orderCount : 0,
+      storeNetRevenue,
+      collectedRevenue,
+      averageTicket: orderCount > 0 ? storeNetRevenue / orderCount : 0,
+      averageCollectedTicket:
+        orderCount > 0 ? collectedRevenue / orderCount : 0,
     };
   }
 }
