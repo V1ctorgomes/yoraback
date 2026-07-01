@@ -90,19 +90,7 @@ export class AdminCrmService {
             payments: { orderBy: { createdAt: 'desc' } },
             statusHistory: { orderBy: { createdAt: 'desc' } },
             shippingEvents: { orderBy: { eventDate: 'desc' } },
-            items: {
-              include: {
-                product: {
-                  select: {
-                    id: true,
-                    name: true,
-                    categoryId: true,
-                    category: { select: { id: true, name: true } },
-                    collection: { select: { id: true, name: true } },
-                  },
-                },
-              },
-            },
+            items: true,
           },
           orderBy: { createdAt: 'desc' },
         },
@@ -116,7 +104,28 @@ export class AdminCrmService {
     const settings = await this.getSettings();
     const metrics = await this.buildMetricsForCustomer(customer.id);
     const segment = resolveCustomerSegment(metrics, settings);
-    const productStats = this.buildProductStats(customer.orders);
+
+    const productIds = [
+      ...new Set(
+        customer.orders
+          .filter((order) => REVENUE_ORDER_STATUSES.includes(order.status))
+          .flatMap((order) => order.items.map((item) => item.productId)),
+      ),
+    ];
+    const products = productIds.length
+      ? await this.prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            category: { select: { id: true, name: true } },
+            collection: { select: { id: true, name: true } },
+          },
+        })
+      : [];
+    const productCatalog = new Map(products.map((product) => [product.id, product]));
+
+    const productStats = this.buildProductStats(customer.orders, productCatalog);
     const timeline = this.buildTimeline(customer);
 
     const lastShippedOrder = customer.orders.find(
@@ -465,22 +474,16 @@ export class AdminCrmService {
   }
 
   private buildProductStats(
-    orders: Prisma.OrderGetPayload<{
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true;
-                name: true;
-                category: { select: { id: true; name: true } };
-                collection: { select: { id: true; name: true } };
-              };
-            };
-          };
-        };
-      };
-    }>['orders'],
+    orders: Prisma.OrderGetPayload<{ include: { items: true } }>[],
+    productCatalog: Map<
+      string,
+      {
+        id: string;
+        name: string;
+        category: { id: string; name: string };
+        collection: { id: string; name: string } | null;
+      }
+    >,
   ) {
     const productMap = new Map<string, { name: string; quantity: number }>();
     const categoryMap = new Map<string, { name: string; quantity: number }>();
@@ -499,7 +502,8 @@ export class AdminCrmService {
         productEntry.quantity += item.quantity;
         productMap.set(item.productId, productEntry);
 
-        const category = item.product?.category;
+        const product = productCatalog.get(item.productId);
+        const category = product?.category;
         if (category) {
           const categoryEntry = categoryMap.get(category.id) ?? {
             name: category.name,
@@ -509,7 +513,7 @@ export class AdminCrmService {
           categoryMap.set(category.id, categoryEntry);
         }
 
-        const collection = item.product?.collection;
+        const collection = product?.collection;
         if (collection) {
           const collectionEntry = collectionMap.get(collection.id) ?? {
             name: collection.name,
