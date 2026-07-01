@@ -89,6 +89,6 @@ export class QueryAdminCrmCustomersDto {
 
 export class ExportAdminCrmCustomersDto extends QueryAdminCrmCustomersDto {
   @IsOptional()
-  @IsIn(['csv', 'xlsx'])
-  format?: 'csv' | 'xlsx' = 'csv';
+  @IsIn(['csv', 'xlsx', 'pdf'])
+  format?: 'csv' | 'xlsx' | 'pdf' = 'csv';
 }

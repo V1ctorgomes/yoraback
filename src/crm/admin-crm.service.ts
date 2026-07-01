@@ -15,6 +15,10 @@ import {
   resolveCustomerStatus,
 } from './crm-segment.util';
 import {
+  buildCrmPdfBuffer,
+  CrmPdfCustomerRow,
+} from './crm-pdf-export.util';
+import {
   CrmCustomerSort,
   CustomerSegment,
   ExportAdminCrmCustomersDto,
@@ -209,6 +213,10 @@ export class AdminCrmService {
       );
 
     const format = query.format ?? 'csv';
+
+    if (format === 'pdf') {
+      return this.buildPdfExport(rows, query, admin.email);
+    }
 
     if (format === 'xlsx') {
       return this.buildXlsxExport(rows);
@@ -711,6 +719,24 @@ export class AdminCrmService {
   ) {
     await this.prisma.crmAccessLog.create({
       data: { adminEmail, action, customerId: customerId ?? null },
+    });
+  }
+
+  private async buildPdfExport(
+    rows: CrmPdfCustomerRow[],
+    filters: ExportAdminCrmCustomersDto,
+    adminEmail: string,
+  ) {
+    const buffer = await buildCrmPdfBuffer(rows, {
+      adminEmail,
+      filters,
+    });
+
+    const dateStamp = new Date().toISOString().slice(0, 10);
+
+    return new StreamableFile(buffer, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="yora-clientes-crm-${dateStamp}.pdf"`,
     });
   }
 
