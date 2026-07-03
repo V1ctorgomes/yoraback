@@ -17,6 +17,7 @@ import { ShippingModule } from './shipping/shipping.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { CrmModule } from './crm/crm.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CrmModule } from './crm/crm.module';
     PromotionsModule,
     AnalyticsModule,
     CrmModule,
+    NewsletterModule,
     HealthModule,
   ],
 })

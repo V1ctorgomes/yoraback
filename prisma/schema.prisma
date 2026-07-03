@@ -651,3 +651,28 @@ model ShippingWebhookEvent {
   @@index([provider, createdAt])
   @@map("shipping_webhook_events")
 }
+
+model NewsletterSubscriber {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  isActive       Boolean   @default(true) @map("is_active")
+  subscribedAt   DateTime  @default(now()) @map("subscribed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([isActive, subscribedAt])
+  @@map("newsletter_subscribers")
+}
+
+model SearchQueryLog {
+  id          String   @id @default(uuid())
+  term        String
+  termNormalized String @map("term_normalized")
+  resultsCount Int     @map("results_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([termNormalized, createdAt])
+  @@index([createdAt])
+  @@map("search_query_logs")
+}
