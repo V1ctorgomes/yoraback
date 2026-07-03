@@ -155,7 +155,7 @@ export class CheckoutService {
           orderNumber,
           customerId: customer.id,
           customerName: dto.customer.name.trim(),
-          customerEmail: dto.customer.email.trim().toLowerCase(),
+          customerEmail: customer.email,
           customerPhone: dto.customer.phone.trim(),
           customerCpf,
           status: OrderStatus.WAITING_PAYMENT,

@@ -11,7 +11,7 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 export interface CheckoutCustomerInput {
   name: string;
-  email: string;
+  email?: string;
   phone: string;
   cpf: string;
   linkedUserId?: string;
@@ -43,9 +43,9 @@ export class CustomersService {
   }
 
   async findOrCreateForCheckout(input: CheckoutCustomerInput): Promise<Customer> {
-    const email = input.email.toLowerCase().trim();
     const name = input.name.trim();
     const phone = input.phone.trim();
+    const email = input.email?.trim().toLowerCase() || null;
     const { cpf, cpfNormalized } = this.parseCpf(input.cpf);
 
     return this.prisma.$transaction(async (tx) => {
@@ -68,11 +68,11 @@ export class CustomersService {
           where: { id: existing.id },
           data: {
             name,
-            email,
             phone,
             cpf,
             cpfNormalized,
             cpfPending: false,
+            ...(email ? { email } : {}),
             ...(input.linkedUserId
               ? {
                   userId: existing.userId ?? input.linkedUserId,
@@ -86,7 +86,7 @@ export class CustomersService {
       return tx.customer.create({
         data: {
           name,
-          email,
+          email: email ?? this.buildGuestEmail(cpfNormalized),
           phone,
           cpf,
           cpfNormalized,
@@ -96,6 +96,10 @@ export class CustomersService {
         },
       });
     });
+  }
+
+  private buildGuestEmail(cpfNormalized: string) {
+    return `guest+${cpfNormalized}@checkout.yora.local`;
   }
 
   async linkUserOnRegister(input: RegisterCustomerInput): Promise<Customer> {
