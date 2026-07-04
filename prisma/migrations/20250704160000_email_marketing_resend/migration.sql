@@ -1,14 +1,41 @@
--- CreateEnum
-CREATE TYPE "EmailCampaignStatus" AS ENUM ('DRAFT', 'SCHEDULED', 'SENDING', 'SENT', 'CANCELLED', 'FAILED');
+-- Migration idempotente: segura para reexecução após falha parcial (P3009).
 
--- CreateEnum
-CREATE TYPE "EmailLogStatus" AS ENUM ('SENT', 'DELIVERED', 'FAILED', 'REJECTED', 'CANCELLED');
+DO $$ BEGIN
+  CREATE TYPE "EmailCampaignStatus" AS ENUM (
+    'DRAFT',
+    'SCHEDULED',
+    'SENDING',
+    'SENT',
+    'CANCELLED',
+    'FAILED'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateEnum
-CREATE TYPE "EmailRecipientType" AS ENUM ('ALL', 'ACTIVE_ONLY', 'SELECTED');
+DO $$ BEGIN
+  CREATE TYPE "EmailLogStatus" AS ENUM (
+    'SENT',
+    'DELIVERED',
+    'FAILED',
+    'REJECTED',
+    'CANCELLED'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateTable
-CREATE TABLE "email_settings" (
+DO $$ BEGIN
+  CREATE TYPE "EmailRecipientType" AS ENUM (
+    'ALL',
+    'ACTIVE_ONLY',
+    'SELECTED'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS "email_settings" (
     "id" TEXT NOT NULL,
     "provider" TEXT NOT NULL DEFAULT 'resend',
     "api_key" TEXT,
@@ -18,13 +45,11 @@ CREATE TABLE "email_settings" (
     "reply_to" TEXT,
     "sandbox" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "email_settings_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "email_templates" (
+CREATE TABLE IF NOT EXISTS "email_templates" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
@@ -32,13 +57,11 @@ CREATE TABLE "email_templates" (
     "text" TEXT,
     "variables" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "email_templates_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "email_campaigns" (
+CREATE TABLE IF NOT EXISTS "email_campaigns" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
@@ -55,13 +78,11 @@ CREATE TABLE "email_campaigns" (
     "scheduled_at" TIMESTAMP(3),
     "sent_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "email_campaigns_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "email_logs" (
+CREATE TABLE IF NOT EXISTS "email_logs" (
     "id" TEXT NOT NULL,
     "campaign_id" TEXT,
     "recipient" TEXT NOT NULL,
@@ -69,21 +90,32 @@ CREATE TABLE "email_logs" (
     "provider_id" TEXT,
     "message" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT "email_logs_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "email_campaigns_status_scheduled_at_idx" ON "email_campaigns"("status", "scheduled_at");
+CREATE INDEX IF NOT EXISTS "email_campaigns_status_scheduled_at_idx"
+  ON "email_campaigns"("status", "scheduled_at");
 
--- CreateIndex
-CREATE INDEX "email_logs_campaign_id_created_at_idx" ON "email_logs"("campaign_id", "created_at");
+CREATE INDEX IF NOT EXISTS "email_logs_campaign_id_created_at_idx"
+  ON "email_logs"("campaign_id", "created_at");
 
--- CreateIndex
-CREATE INDEX "email_logs_status_created_at_idx" ON "email_logs"("status", "created_at");
+CREATE INDEX IF NOT EXISTS "email_logs_status_created_at_idx"
+  ON "email_logs"("status", "created_at");
 
--- AddForeignKey
-ALTER TABLE "email_campaigns" ADD CONSTRAINT "email_campaigns_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "email_templates"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "email_campaigns"
+    ADD CONSTRAINT "email_campaigns_template_id_fkey"
+    FOREIGN KEY ("template_id") REFERENCES "email_templates"("id")
+    ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "email_logs" ADD CONSTRAINT "email_logs_campaign_id_fkey" FOREIGN KEY ("campaign_id") REFERENCES "email_campaigns"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "email_logs"
+    ADD CONSTRAINT "email_logs_campaign_id_fkey"
+    FOREIGN KEY ("campaign_id") REFERENCES "email_campaigns"("id")
+    ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
