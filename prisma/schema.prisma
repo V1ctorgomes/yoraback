@@ -676,3 +676,95 @@ model SearchQueryLog {
   @@index([createdAt])
   @@map("search_query_logs")
 }
+
+enum EmailCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+  FAILED
+}
+
+enum EmailLogStatus {
+  SENT
+  DELIVERED
+  FAILED
+  REJECTED
+  CANCELLED
+}
+
+enum EmailRecipientType {
+  ALL
+  ACTIVE_ONLY
+  SELECTED
+}
+
+model EmailSettings {
+  id        String   @id @default(uuid())
+  provider  String   @default("resend")
+  apiKey    String?  @map("api_key")
+  domain    String?
+  fromName  String?  @map("from_name")
+  fromEmail String?  @map("from_email")
+  replyTo   String?  @map("reply_to")
+  sandbox   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("email_settings")
+}
+
+model EmailTemplate {
+  id        String          @id @default(uuid())
+  name      String
+  subject   String
+  html      String          @db.Text
+  text      String?         @db.Text
+  variables String[]        @default([])
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  campaigns EmailCampaign[]
+
+  @@map("email_templates")
+}
+
+model EmailCampaign {
+  id              String              @id @default(uuid())
+  name            String
+  subject         String
+  fromName        String?             @map("from_name")
+  fromEmail       String?             @map("from_email")
+  replyTo         String?             @map("reply_to")
+  html            String              @db.Text
+  text            String?             @db.Text
+  status          EmailCampaignStatus @default(DRAFT)
+  recipientType   EmailRecipientType  @default(ACTIVE_ONLY) @map("recipient_type")
+  recipientEmails String[]            @default([]) @map("recipient_emails")
+  recipientCount  Int                 @default(0) @map("recipient_count")
+  templateId      String?             @map("template_id")
+  template        EmailTemplate?      @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  scheduledAt     DateTime?           @map("scheduled_at")
+  sentAt          DateTime?           @map("sent_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  logs            EmailLog[]
+
+  @@index([status, scheduledAt])
+  @@map("email_campaigns")
+}
+
+model EmailLog {
+  id         String             @id @default(uuid())
+  campaignId String?            @map("campaign_id")
+  campaign   EmailCampaign?     @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  recipient  String
+  status     EmailLogStatus
+  providerId String?            @map("provider_id")
+  message    String?
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  @@index([campaignId, createdAt])
+  @@index([status, createdAt])
+  @@map("email_logs")
+}
