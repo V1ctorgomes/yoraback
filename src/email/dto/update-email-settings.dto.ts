@@ -45,6 +45,15 @@ export class UpdateEmailSettingsDto {
   @IsOptional()
   @IsBoolean()
   sandbox?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  resendSegmentId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  resendSyncEnabled?: boolean;
 }
 
 export class TestEmailConnectionDto {

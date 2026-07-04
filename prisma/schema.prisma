@@ -701,16 +701,18 @@ enum EmailRecipientType {
 }
 
 model EmailSettings {
-  id        String   @id @default(uuid())
-  provider  String   @default("resend")
-  apiKey    String?  @map("api_key")
-  domain    String?
-  fromName  String?  @map("from_name")
-  fromEmail String?  @map("from_email")
-  replyTo   String?  @map("reply_to")
-  sandbox   Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  provider         String   @default("resend")
+  apiKey           String?  @map("api_key")
+  domain           String?
+  fromName         String?  @map("from_name")
+  fromEmail        String?  @map("from_email")
+  replyTo          String?  @map("reply_to")
+  sandbox          Boolean  @default(true)
+  resendSegmentId  String?  @map("resend_segment_id")
+  resendSyncEnabled Boolean @default(false) @map("resend_sync_enabled")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("email_settings")
 }

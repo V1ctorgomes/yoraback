@@ -5,6 +5,7 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { EmailResendContactsService } from '../email/email-resend-contacts.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ExportAdminNewsletterDto,
@@ -14,7 +15,10 @@ import { SubscribeNewsletterDto } from './dto/subscribe-newsletter.dto';
 
 @Injectable()
 export class NewsletterService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private resendContacts: EmailResendContactsService,
+  ) {}
 
   async subscribe(dto: SubscribeNewsletterDto) {
     const email = dto.email.trim().toLowerCase();
@@ -36,6 +40,8 @@ export class NewsletterService {
         },
       });
 
+      void this.resendContacts.syncNewsletterSubscribe(reactivated.email);
+
       return {
         message: 'Inscrição reativada com sucesso.',
         subscriber: this.mapSubscriber(reactivated),
@@ -45,6 +51,8 @@ export class NewsletterService {
     const subscriber = await this.prisma.newsletterSubscriber.create({
       data: { email },
     });
+
+    void this.resendContacts.syncNewsletterSubscribe(subscriber.email);
 
     return {
       message: 'Inscrição realizada com sucesso.',
@@ -76,6 +84,8 @@ export class NewsletterService {
         unsubscribedAt: new Date(),
       },
     });
+
+    void this.resendContacts.syncNewsletterUnsubscribe(updated.email);
 
     return {
       message: 'Inscrição cancelada com sucesso.',
@@ -126,6 +136,18 @@ export class NewsletterService {
     }
 
     return this.buildCsvExport(mapped);
+  }
+
+  async syncActiveSubscribersToResend() {
+    const rows = await this.prisma.newsletterSubscriber.findMany({
+      where: { isActive: true },
+      select: { email: true },
+      orderBy: { subscribedAt: 'desc' },
+    });
+
+    return this.resendContacts.syncAllActiveSubscribers(
+      rows.map((row) => row.email),
+    );
   }
 
   private async getStats() {

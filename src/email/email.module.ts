@@ -14,6 +14,7 @@ import { AdminEmailTemplatesController } from './admin-email-templates.controlle
 import { EmailCampaignService } from './email-campaign.service';
 import { EmailDashboardService } from './email-dashboard.service';
 import { EmailEncryptionService } from './email-encryption.service';
+import { EmailResendContactsService } from './email-resend-contacts.service';
 import { EmailSchedulerService } from './email-scheduler.service';
 import { EmailSettingsService } from './email-settings.service';
 import { EmailTemplateService } from './email-template.service';
@@ -36,7 +37,8 @@ import { EmailService } from './email.service';
     EmailCampaignService,
     EmailDashboardService,
     EmailSchedulerService,
+    EmailResendContactsService,
   ],
-  exports: [EmailService],
+  exports: [EmailService, EmailResendContactsService],
 })
 export class EmailModule {}

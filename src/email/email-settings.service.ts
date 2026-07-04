@@ -36,6 +36,12 @@ export class EmailSettingsService {
       data.replyTo = dto.replyTo?.trim().toLowerCase() || null;
     }
     if (dto.sandbox !== undefined) data.sandbox = dto.sandbox;
+    if (dto.resendSegmentId !== undefined) {
+      data.resendSegmentId = dto.resendSegmentId?.trim() || null;
+    }
+    if (dto.resendSyncEnabled !== undefined) {
+      data.resendSyncEnabled = dto.resendSyncEnabled;
+    }
 
     if (dto.apiKey !== undefined) {
       const sanitized = ResendProvider.sanitizeApiKey(dto.apiKey);
@@ -134,6 +140,8 @@ export class EmailSettingsService {
       fromEmail: string | null;
       replyTo: string | null;
       sandbox: boolean;
+      resendSegmentId: string | null;
+      resendSyncEnabled: boolean;
       createdAt: Date;
       updatedAt: Date;
     },
@@ -149,6 +157,8 @@ export class EmailSettingsService {
       fromEmail: settings.fromEmail,
       replyTo: settings.replyTo,
       sandbox: settings.sandbox,
+      resendSegmentId: settings.resendSegmentId,
+      resendSyncEnabled: settings.resendSyncEnabled,
       createdAt: settings.createdAt.toISOString(),
       updatedAt: settings.updatedAt.toISOString(),
     };

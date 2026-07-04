@@ -3,6 +3,8 @@ import {
   EmailProvider,
   SendEmailInput,
   SendEmailResult,
+  UpsertContactInput,
+  UpsertContactResult,
 } from './email-provider.interface';
 
 const RESEND_API = 'https://api.resend.com';
@@ -102,6 +104,110 @@ export class ResendProvider implements EmailProvider {
       providerId: null,
       status: 'failed',
       message: lastError,
+    };
+  }
+
+  async upsertContact(input: UpsertContactInput): Promise<UpsertContactResult> {
+    const email = input.email.trim().toLowerCase();
+    const firstName = input.firstName?.trim() || email.split('@')[0];
+    const body: Record<string, unknown> = {
+      email,
+      first_name: firstName,
+      unsubscribed: false,
+    };
+
+    if (input.segmentId) {
+      body.segments = [{ id: input.segmentId }];
+    }
+
+    const created = await this.request('/contacts', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    const createdBody = await created.json().catch(() => ({}));
+
+    if (created.ok && typeof createdBody.id === 'string') {
+      return { ok: true, contactId: createdBody.id };
+    }
+
+    const updated = await this.request(`/contacts/${encodeURIComponent(email)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        first_name: firstName,
+        unsubscribed: false,
+      }),
+    });
+    const updatedBody = await updated.json().catch(() => ({}));
+
+    if (!updated.ok) {
+      return {
+        ok: false,
+        contactId: null,
+        message:
+          typeof updatedBody.message === 'string'
+            ? updatedBody.message
+            : typeof createdBody.message === 'string'
+              ? createdBody.message
+              : 'Não foi possível sincronizar contato no Resend.',
+      };
+    }
+
+    if (input.segmentId) {
+      const segment = await this.request(
+        `/contacts/${encodeURIComponent(email)}/segments/${input.segmentId}`,
+        { method: 'POST' },
+      );
+
+      if (!segment.ok) {
+        const segmentBody = await segment.json().catch(() => ({}));
+        return {
+          ok: false,
+          contactId:
+            typeof updatedBody.id === 'string' ? updatedBody.id : null,
+          message:
+            typeof segmentBody.message === 'string'
+              ? segmentBody.message
+              : 'Contato criado, mas não foi adicionado ao segmento.',
+        };
+      }
+    }
+
+    return {
+      ok: true,
+      contactId:
+        typeof updatedBody.id === 'string' ? updatedBody.id : null,
+    };
+  }
+
+  async unsubscribeContact(email: string): Promise<UpsertContactResult> {
+    const normalized = email.trim().toLowerCase();
+    const response = await this.request(
+      `/contacts/${encodeURIComponent(normalized)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ unsubscribed: true }),
+      },
+    );
+    const body = await response.json().catch(() => ({}));
+
+    if (response.ok) {
+      return {
+        ok: true,
+        contactId: typeof body.id === 'string' ? body.id : null,
+      };
+    }
+
+    if (response.status === 404) {
+      return { ok: true, contactId: null };
+    }
+
+    return {
+      ok: false,
+      contactId: null,
+      message:
+        typeof body.message === 'string'
+          ? body.message
+          : 'Não foi possível cancelar contato no Resend.',
     };
   }
 

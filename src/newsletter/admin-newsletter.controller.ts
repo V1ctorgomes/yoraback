@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import { AdminGuard } from '../auth/guards/access.guard';
 import {
   ExportAdminNewsletterDto,
@@ -19,5 +19,10 @@ export class AdminNewsletterController {
   @Get('export')
   export(@Query() query: ExportAdminNewsletterDto) {
     return this.newsletterService.export(query);
+  }
+
+  @Post('sync-resend')
+  syncResend() {
+    return this.newsletterService.syncActiveSubscribersToResend();
   }
 }
